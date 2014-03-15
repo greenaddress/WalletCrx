@@ -1,0 +1,9 @@
+<script type="text/javascript" src="/static/js/scrypt.min.js"></script>
+<script type="text/javascript" src="/static/js/bitcoinjs.min.js"></script>
+<script type="text/javascript" src="/static/js/bip38.min.js"></script>
+<script>
+  window.addEventListener('message', function(event) {
+    var input = event.data;
+    event.source.postMessage(bip38.encrypt({data: input.data, key: input.key}, input.salt), event.origin);
+  });
+</script>

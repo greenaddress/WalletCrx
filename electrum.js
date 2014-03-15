@@ -47,6 +47,10 @@ function logInfo() {
   // console.log.apply(console, arguments);
 };
 
+function logFatal() {
+  // console.log.apply(console, arguments);
+};
+
 /**
  * @constructor
  */
@@ -131,24 +135,7 @@ Electrum.prototype.handleResponse = function(o) {
     this.pendingRpcCount--;
   } else {
     logInfo("notification from electrum", o);
-    var ALLOWED_METHODS = [
-      "blockchain.address.subscribe",
-      "blockchain.headers.subscribe",
-      "blockchain.numblocks.subscribe"
-    ];
-    if (ALLOWED_METHODS.indexOf(o["method"]) != -1) {
-      $.event.trigger({
-        "type": o["method"],
-        "message": o["params"],
-        time: new Date()
-      });
-    }
   }
-  $.event.trigger({
-    "type": "apply",
-    "message": undefined,
-    time: new Date()
-  });
 };
 
 Electrum.prototype.getConnectionStateDescription = function() {

@@ -5,6 +5,9 @@
             "scripts": ["background.js"]
         }
     },
+    "sandbox": {
+        "pages": ["bip38_sandbox.html"]
+    },
     "permissions": [
         "storage"
     ],
