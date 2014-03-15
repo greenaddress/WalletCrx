@@ -183,8 +183,8 @@ angular.module('greenWalletSettingsControllers',
                 notices.makeNotice('error', err.desc);
             });
     };
-}]).controller('SettingsController', ['$scope', 'wallets', 'tx_sender', 'notices', '$modal', 'gaEvent',
-        function SettingsController($scope, wallets, tx_sender, notices, $modal, gaEvent) {
+}]).controller('SettingsController', ['$scope', 'wallets', 'tx_sender', 'notices', '$modal', 'gaEvent', 'storage',
+        function SettingsController($scope, wallets, tx_sender, notices, $modal, gaEvent, storage) {
     if (!wallets.requireWallet($scope)) return;
     var exchanges = $scope.exchanges = {
         BITSTAMP: 'Bitstamp',   
@@ -195,6 +195,7 @@ angular.module('greenWalletSettingsControllers',
         return gettext("(about %s days: 1 day ≈ 144 blocks)").replace("%s", Math.round(num/144));
     }
     var settings = $scope.settings = {
+        noLocalStorage: storage.noLocalStorage,
         currency: $scope.wallet.fiat_currency,
         exchange: $scope.wallet.fiat_exchange,
         notifications: angular.copy($scope.wallet.appearance.notifications_settings || {}),
@@ -349,10 +350,13 @@ angular.module('greenWalletSettingsControllers',
         while (addressbook.items.length) addressbook.items.pop();
         items.sort(function(a, b) { return a[0].localeCompare(b[0]); });
         var i = 0;
+        var is_chrome_app = window.chrome && chrome.storage;
         angular.forEach(items, function(value) {
             if (value[3] == 'facebook') {
+                var has_wallet = value[4];
+                if (!has_wallet && is_chrome_app) return;  // can't send FB messages from Chrome app
                 var href = 'https://www.facebook.com/' + value[1];
-                addressbook.items.push({name: value[0], type: value[3], address: value[1], has_wallet: value[4], href: href});
+                addressbook.items.push({name: value[0], type: value[3], address: value[1], has_wallet: has_wallet, href: href});
             } else {
                 addressbook.items.push({name: value[0], type: value[3], has_wallet: value[4], address: value[1]});
             }

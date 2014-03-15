@@ -172,14 +172,14 @@
     </form>
   </div>
 </div>
-<hr class="double">
-<div class="row">
+<hr class="double" ng-show="!settings.noLocalStorage">
+<div ng-controller="QuickLoginController" class="row" ng-show="!settings.noLocalStorage">
   <div class="col-md-3">
     <div class="sub-header">Quick login</div>
     <div class="sub-header-desc">Enable a simple PIN to quickly access your wallet from this device.</div>
   </div>
   <div class="col-md-9">
-    <div ng-controller="QuickLoginController" ng-show="quicklogin.loaded">
+    <div ng-show="quicklogin.loaded">
       <form ng-submit="set_new_pin()" class="form-horizontal" role="form">
         <label class="switch">
           <input type="checkbox" class="switch" ng-model="quicklogin.enabled" ng-disabled="quicklogin.started_setting_pin">
@@ -215,42 +215,7 @@
     </div>
   </div>
 </div>
-<hr class="double">
-<div class="row">
-  <div class="col-md-3">
-    <div class="sub-header">Link third party accounts</div>
-    <div class="sub-header-desc">Allow social payments and watch-only login to your wallet via third party accounts.</div>
-  </div>
-  <div class="col-md-9">
-    <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController">
-      <button class="btn btn-block-xs btn-facebook"><i class="icon-facebook"></i> Facebook</button>
-      <label class="switch">
-        <input ng-disabled="thirdparty.toggling_fb || thirdparty.fbstate.logging_in" ng-model="thirdparty.fbstate.enabled" type="checkbox" class="switch">
-        <span class="switch"></span>
-      </label>
-      <hr>
-      
-      <button class="btn btn-block-xs btn-reddit"><i class="icon-reddit"></i> Reddit</button>
-      <label class="switch">
-        <input ng-disabled="thirdparty.toggling_reddit || thirdparty.redditstate.logging_in" ng-model="thirdparty.redditstate.enabled" type="checkbox" class="switch">
-        <span class="switch"></span>
-      </label>
-      <hr>
-      
-      <button class="btn btn-block-xs btn-twitter" disabled><i class="icon-twitter"></i> Twitter <span class="coming-soon">Coming soon</span></button>
-      <label class="switch">
-        <input type="checkbox" class="switch" disabled>
-        <span class="switch"></span>
-      </label>
-      <hr>
-      <button class="btn btn-block-xs btn-default" disabled><i class="glyphicon glyphicon-lock"></i> Custom Login<span class="coming-soon">Coming soon</span></button>
-      <label class="switch">
-        <input type="checkbox" class="switch" disabled>
-        <span class="switch"></span>
-      </label>
-    </form>
-  </div>
-</div>
+
 <hr class="double">
 <div class="row">
   <div class="col-md-3">

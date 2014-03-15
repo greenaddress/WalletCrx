@@ -839,14 +839,26 @@ angular.module('greenWalletServices', [])
         }
     }
 }).factory('storage', ['$q', function($q) {
+    if (window.chrome && chrome.storage) {
+        var noLocalStorage = false;
+    } else {
+        try {
+            var noLocalStorage = !window.localStorage;
+        } catch(e) {
+            var noLocalStorage = true;
+        }
+    }
     var storageService = {
+        noLocalStorage: noLocalStorage,
         set: function(key, value) {
             if (window.chrome && chrome.storage) {
                 var set_value = {};
                 set_value[key] = value;
                 chrome.storage.local.set(set_value);
             } else {
-                localStorage.setItem(key, value);
+                if(!noLocalStorage) {
+                    localStorage.setItem(key, value);
+                }
             }
         },
         get: function(key) {
@@ -862,12 +874,18 @@ angular.module('greenWalletServices', [])
             } else {
                 if (key.constructor === Array) {
                     var ret = {};
-                    for (var i = 0; i < key.length; ++i) {
-                        ret[key[i]] = localStorage.getItem(key[i]);
+                    if (!noLocalStorage) {
+                        for (var i = 0; i < key.length; ++i) {
+                            ret[key[i]] = localStorage.getItem(key[i]);
+                        }
                     }
                     d.resolve(ret);
                 } else {
-                    d.resolve(localStorage.getItem(key));
+                    if (!noLocalStorage) {
+                        d.resolve(localStorage.getItem(key));
+                    } else {
+                        d.resolve();
+                    }
                 }
             }
             return d.promise;

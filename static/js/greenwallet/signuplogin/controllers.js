@@ -4,7 +4,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
     var state = {};
     storage.get(['pin_ident', 'encrypted_seed', 'pin_refused']).then(function(data) {
         state.has_pin = data.pin_ident && data.encrypted_seed;
-        state.refused_pin = data.pin_refused;
+        state.refused_pin = data.pin_refused || storage.noLocalStorage;  // don't show the PIN popup if no storage is available
         state.pin_ident = data.pin_ident;
         state.encrypted_seed = data.encrypted_seed;
     });
