@@ -1,0 +1,290 @@
+  <div class="row hidden-xs hidden-sm">
+  <div class="col-md-12">
+    <div class="header">
+      Settings<span class="balance pull-right" ng-include="'/'+LANG+'/wallet/partials/wallet_balance.html'"></span>
+    </div>
+  </div>
+</div>
+<div class="row currencies" ng-show="settings.available_currencies">
+  <div class="col-md-3">
+    <div class="sub-header">Currency</div>
+    <div class="sub-header-desc">Select your currency and pricing source.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline">
+      <div class="form-group">
+        <label class="control-label">Pricing source to use</label>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button ng-repeat="(exchange, available) in settings.available_currencies.per_exchange" type="button" class="btn btn-xs btn-default" ng-class="{'btn-primary': settings.exchange == exchange, 'btn-default': settings.exchange != exchange}" ng-model="settings.exchange" btn-radio="exchange" ng-disabled="settings.updating_exchange || available.indexOf(settings.currency) == -1">(( exchanges[exchange] ))</button>
+        </div>
+      </div>
+    </form>
+    <hr>
+    <form role="form" class="form-inline">
+      <div class="form-group">
+        <label class="control-label">Show amounts in</label>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button ng-repeat="currency in settings.available_currencies.all" type="button" class="btn btn-xs" ng-class="{'btn-primary': settings.currency == currency, 'btn-default': settings.currency != currency}" ng-model="settings.currency" btn-radio="currency" ng-disabled="settings.updating_currency || settings.available_currencies.per_exchange[settings.exchange].indexOf(currency) == -1">(( currency ))</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Notifications</div>
+    <div class="sub-header-desc">Notifications allow for improved security when configured for outgoing and for most up to date information when configured for incoming</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline">
+    <div ng-class="{grayedout: !wallet.twofac_email_confirmed}">
+      <div class="form-group">
+        <label class="control-label">Send incoming transaction notification by</label>
+      </div>
+      <div class="form-group">
+        <label class="switch">
+          <input type="checkbox" class="switch" ng-model="settings.notifications.email_incoming" ng-disabled="settings.updating_ntf_email_incoming || !wallet.twofac_email_confirmed">
+          <span class="switch"></span>
+          email
+        </label>
+      </div><!--
+      <div class="form-group">
+        <label class="switch">
+          <input type="checkbox" class="switch">
+          <span class="switch"></span>
+          SMS
+        </label>
+      </div> -->
+    </div>
+      <hr>
+    <div ng-class="{grayedout: !wallet.twofac_email_confirmed}">
+        <div class="form-group">
+          <label class="control-label">Send outgoing transaction notification by</label>
+        </div>
+        <div class="form-group">
+          <label class="switch">
+              <input type="checkbox" class="switch" ng-model="settings.notifications.email_outgoing" ng-disabled="settings.updating_ntf_email_outgoing || !wallet.twofac_email_confirmed">
+              <span class="switch"></span>
+              email
+          </label>
+        </div><!--
+        <div class="form-group">
+          <label class="switch">
+            <input type="checkbox" class="switch">
+            <span class="switch"></span>
+            SMS
+          </label>
+        </div> -->
+      </div>
+      <div ng-hide="wallet.twofac_email_confirmed">
+        <hr>
+        <small class="text-info"><strong>NOTE</strong>: You need to have email Two Factor Authentication enabled for this feature to work.</small>
+      </div>
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Two factor authentication</div>
+    <div class="sub-header-desc">Set any or all two factor: you can choose which one when needed!</div>
+  </div>
+  <div class="col-md-9">
+    <div ng-controller="TwoFactorSetupController" ng-include="'/en/wallet/partials/wallet_2fa.html'"></div>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Spending limits</div>
+    <div class="sub-header-desc">Set some limits for which you won't be asked for two factor for super userfriendly payments.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-horizontal">
+      <label class="switch">
+          <input type="checkbox" class="switch" disabled>
+          <span class="switch"></span>
+          <span>
+            Enable delayed payments
+            <span class="coming-soon">Coming soon</span>
+          </span>
+      </label>
+      <!--
+      <hr>
+      <div class="form-group">
+        <label for="single" class="col-sm-3 control-label">Single transaction</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="single" placeholder="Amount">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="daily" class="col-sm-3 control-label">Daily</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="daily" placeholder="Amount">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="monthly" class="col-sm-3 control-label">Monthly</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="monthly" placeholder="Amount">
+        </div>
+      </div>
+      -->
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Delayed payments</div>
+    <div class="sub-header-desc">Delay transaction for super ease of mind: works best in conjuction with outgoing notifications.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-horizontal">
+      <label class="switch">
+          <input type="checkbox" class="switch" disabled>
+          <span class="switch"></span>
+          <span>
+            Enable delayed payments
+            <span class="coming-soon">Coming soon</span>
+          </span>
+      </label>
+      <!--
+      <hr>
+      <div class="form-group">
+        <label class="control-label col-sm-3">Delay payments of</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" placeholder="Amount">
+        </div>
+        <div class="col-sm-4">
+          <select class="form-control">
+            <option value="">Seconds</option>
+            <option value="">Minutes</option>
+          </select>
+        </div>
+      </div>
+      -->
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Quick login</div>
+    <div class="sub-header-desc">Enable a simple PIN to quickly access your wallet from this device.</div>
+  </div>
+  <div class="col-md-9">
+    <div ng-controller="QuickLoginController" ng-show="quicklogin.loaded">
+      <form ng-submit="set_new_pin()" class="form-horizontal" role="form">
+        <label class="switch">
+          <input type="checkbox" class="switch" ng-model="quicklogin.enabled" ng-disabled="quicklogin.started_setting_pin">
+          <span class="switch"></span>
+            Enable quick login on this device
+        </label>
+        <hr ng-show="quicklogin.started_setting_pin || quicklogin.enabled">
+        <div class="form-group" ng-show="quicklogin.started_setting_pin || quicklogin.enabled">
+          <label ng-show="quicklogin.enabled" class="control-label col-sm-3">Change PIN number</label>
+          <label ng-hide="quicklogin.enabled" class="control-label col-sm-3">Set PIN number</label>
+          <div class="col-sm-4">
+            <input type="tel" class="form-control" placeholder="Four digit number"
+                   maxlength="4" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" ng-model="quicklogin.new_pin">
+            <input type="submit" class="btn btn-primary" ng-show="quicklogin.new_pin" value="Confirm" ng-disabled="quicklogin.setting_pin" />
+          </div>
+        </div>
+        <hr>
+        <button class="btn btn-danger btn-block-xs" ng-click="remove_all_pin_logins()">Disable quick login on all devices</button>
+        <!-- 
+        <div class="form-group">
+          <select id="quick-login-select" ng-model="quicklogin.selected_device" ng-options="device.device_name for device in quicklogin.devices"></select>
+          <label for="pin" class="col-sm-3 control-label">set PIN to</label>
+          <div class="col-sm-4">
+            <input id="pin" class="form-control" style="width:120px;" placeholder="PIN number" type="tel" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" maxlength="4" ng-model="quicklogin.new_pin" />
+          </div>
+          <div class="col-sm-4">
+            <a href="" ng-click="remove_pin()" class="noanimate btn btn-danger" ng-class="{disabled: quicklogin.removing_pin}" ng-hide="quicklogin.selected_device.is_current && quicklogin.new_pin">Remove</a>
+            <input type="submit" class="btn btn-primary" ng-show="quicklogin.selected_device.is_current && quicklogin.new_pin" value="Confirm" ng-disabled="quicklogin.setting_pin" />
+          </div>
+        </div>
+        -->
+      </form>
+    </div>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Link third party accounts</div>
+    <div class="sub-header-desc">Allow social payments and watch-only login to your wallet via third party accounts.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController">
+      <button class="btn btn-block-xs btn-facebook"><i class="icon-facebook"></i> Facebook</button>
+      <label class="switch">
+        <input ng-disabled="thirdparty.toggling_fb || thirdparty.fbstate.logging_in" ng-model="thirdparty.fbstate.enabled" type="checkbox" class="switch">
+        <span class="switch"></span>
+      </label>
+      <hr>
+      
+      <button class="btn btn-block-xs btn-reddit"><i class="icon-reddit"></i> Reddit</button>
+      <label class="switch">
+        <input ng-disabled="thirdparty.toggling_reddit || thirdparty.redditstate.logging_in" ng-model="thirdparty.redditstate.enabled" type="checkbox" class="switch">
+        <span class="switch"></span>
+      </label>
+      <hr>
+      
+      <button class="btn btn-block-xs btn-twitter" disabled><i class="icon-twitter"></i> Twitter <span class="coming-soon">Coming soon</span></button>
+      <label class="switch">
+        <input type="checkbox" class="switch" disabled>
+        <span class="switch"></span>
+      </label>
+      <hr>
+      <button class="btn btn-block-xs btn-default" disabled><i class="glyphicon glyphicon-lock"></i> Custom Login<span class="coming-soon">Coming soon</span></button>
+      <label class="switch">
+        <input type="checkbox" class="switch" disabled>
+        <span class="switch"></span>
+      </label>
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Show mnemonic</div>
+    <div class="sub-header-desc">Display your mnemonic for account recovery or cloning on another device.</div>
+  </div>
+  <div class="col-md-9">
+    <button class="btn btn-warning btn-block-xs" ng-click="show_mnemonic()">Show mnemonic</button>
+    
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">nLockTime</div>
+    <div class="sub-header-desc">nLockTime transactions allow you to redeem your deposited funds without GreenAddress.it's signature after pre-defined number of blocks</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline" ng-submit="settings.nlocktime.update()">
+      <div class="form-group">
+        <div ng-class="{grayedout: !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac_email_confirmed}">
+          <label for="id_nlocktime_blocks" class="control-label">Allow redeeming funds without GreenAddress.it signature after</label>
+          <input class="form-control" type="tel" ng-model="settings.nlocktime.blocks_new" ng-disabled="settings.nlocktime.updating_nlocktime_blocks || !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac_email_confirmed" />
+          blocks
+          <input type="submit" class="btn btn-sm btn-default" value="Save" ng-show="settings.nlocktime.blocks_new != settings.nlocktime.blocks" ng-disabled="settings.nlocktime.updating_nlocktime_blocks"  />
+          <br />(( settings.nlocktime.blocks_userfriendly ))
+        </div>
+        <div ng-hide="settings.notifications.email_incoming && settings.notifications.email_outgoing">
+          <hr>
+          <small class="text-info"><strong>NOTE</strong>: Both outgoing and incoming transaction notifications must be enabled for this feature to work.</small>
+          <hr>
+          <a href="" class="btn btn-default btn-block-xs" ng-click="settings.expiring_soon_modal()"><i class="glyphicon glyphicon-time"></i> Show outputs expiring soon</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>

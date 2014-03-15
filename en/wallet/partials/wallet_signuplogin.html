@@ -1,0 +1,37 @@
+<div class="create-modal-backdrop"></div>
+<div class="create-modal" style="overflow-y: hidden">
+    <div class="create-modal-dialog">
+        <div class="create-modal-content">
+            <div class="create-modal-header">
+                Haven't got an account yet? <a href="#/create">Create new Wallet</a>
+            </div>
+            <div class="create-modal-body text-center">
+                <div ng-include=" 'wallet_signuplogin_header.html' "></div>
+                
+                <hr>
+                <div class="subtitle">Log in for full Wallet access</div>
+                <form class="form-inline" ng-submit="login()" ng-class="{'has-error': state.mnemonic_error}">
+                    <div class="control-group" ng-class="{'has-error': state.error && form.$invalid}">
+                        <input ng-show="state.has_pin" class="form-control pin login-input-1" type="tel" mask-input name="pin"
+                            maxlength="4" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" focus-on="pin"
+                            placeholder="PIN number" ng-model="use_pin_data.pin" />
+                        <span ng-show="state.has_pin" class="login-label">or</span>
+                        <input class="form-control login-input-2" ng-disabled="is_loading" ng-model="state.mnemonic"
+                            placeholder="Mnemonic passphrase" ng-model=""
+                            ng-class="{'has-error': state.mnemonic_error}" />
+                        
+                        <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Invalid mnemonic: (( state.mnemonic_error ))</span
+                    </div>
+                    <hr>
+                    <button type="submit" ng-disabled="is_loading || (state.seed_progress && !state.login_error)"
+                            class="btn login-submit" ng-class="{'btn-primary': !state.login_error, 'btn-danger': state.login_error}"
+                            href="#" id="restore-wallet-continue">
+                        <span ng-hide="state.seed_progress || state.login_error">Login to your Wallet</span>
+                        <span ng-show="state.seed_progress && !state.login_error">Processing ... (( state.seed_progress ))%</span>
+                        <span ng-show="state.login_error">Error, try again</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
