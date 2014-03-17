@@ -22,6 +22,10 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             return mnemonics.toSeed(state.mnemonic).then(function(seed) {
                 return mnemonics.toSeed(state.mnemonic, 'greenaddress_path').then(function(path_seed) {
                     var hdwallet = new GAHDWallet({seed_hex: seed});
+                    // seed, mneomnic, and path seed required already here for PIN setup below
+                    $scope.wallet.hdwallet = hdwallet;
+                    $scope.wallet.mnemonic = state.mnemonic;
+                    $scope.wallet.gait_path_seed = path_seed;
                     state.seed_progress = 100;
                     state.seed = seed;
                     var do_login = function() {

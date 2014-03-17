@@ -503,8 +503,9 @@ angular.module('greenWalletServices', [])
             return deferred.promise;
         };
         if (!tx_sender.logged_in) {
-            var hdwallet = new GAHDWallet({seed_hex: seed});
-            return walletsService.login($scope||{wallet:{}}, hdwallet, mnemonic, false).then(function() {
+            var hdwallet = new GAHDWallet({seed_hex: $scope.wallet.hdwallet.seed_hex});
+            return walletsService.login($scope||{wallet:{}}, hdwallet,
+                    $scope.wallet.mnemonic, false, false, $scope.wallet.gait_path_seed).then(function() {
                 return do_create();
             });
         } else {  // already logged in
