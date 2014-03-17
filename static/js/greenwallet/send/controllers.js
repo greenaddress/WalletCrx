@@ -75,7 +75,8 @@ angular.module('greenWalletSendControllers',
 
             // calculate fees
             var fee = in_value.subtract(out_value), recipient_fee = BigInteger.valueOf(0);
-            if (that.add_fee == 'recipient') recipient_fee = fee;
+            // subtract mod 10000 to allow anti-dust (<5430) fee
+            if (that.add_fee == 'recipient') recipient_fee = fee.subtract(fee.mod(BigInteger.valueOf(10000)));
 
             // check output value
             if (BigInteger.fromByteArrayUnsigned(bytes).compareTo(

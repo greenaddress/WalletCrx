@@ -1,11 +1,23 @@
 angular.module('greenWalletReceiveControllers',
     ['greenWalletServices'])
-.controller('ReceiveController', ['$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent',
-        function InfoController($scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent) {
+.controller('ReceiveController', ['$rootScope', '$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent', '$modal',
+        function InfoController($rootScope, $scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent, $modal) {
     if(!wallets.requireWallet($scope)) return;
     var base_payment_url = 'https://' + hostname + '/pay/' + $scope.wallet.receiving_id + '/';
     $scope.receive = {
-        payment_url: base_payment_url
+        payment_url: base_payment_url,
+        show_previous_addresses: function() {
+            $rootScope.is_loading += 1;
+            tx_sender.call('http://greenaddressit.com/addressbook/get_my_addresses').then(function(data) {
+                $scope.receive.my_addresses = data;
+                $modal.open({
+                    templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_my_addresses.html',
+                    scope: $scope
+                });
+            }, function(err) {
+                notices.makeNotice('error', err.desc);
+            }).finally(function() { $rootScope.is_loading -= 1; });
+        }
     };
     var formatAmountBitcoin = function(amount) {
         var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(new BigInteger('1000'));
