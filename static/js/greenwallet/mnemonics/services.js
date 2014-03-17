@@ -87,9 +87,13 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
         });
         return deferred.promise;
     }
-    mnemonics.toSeed = function(mnemonic) {
+    mnemonics.seedToPath = function(seed) {
+        var shaObj = new jsSHA(seed, 'HEX');
+        return shaObj.getHMAC('GreenAddress.it HD wallet path', 'TEXT', 'SHA-512', 'HEX'); 
+    }
+    mnemonics.toSeed = function(mnemonic, k) {
         var deferred = $q.defer();
-        var k = 'mnemonic';
+        k = k || 'mnemonic';
         var m = mnemonic;
         if (window.cordova) {
             cordovaReady(function() {

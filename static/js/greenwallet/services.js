@@ -26,8 +26,8 @@ angular.module('greenWalletServices', [])
         return null;
     }
     return cryptoService;
-}).factory('wallets', ['$q', '$rootScope', 'tx_sender', '$location', 'notices', '$modal', 'focus', 'crypto', 'gaEvent', 'storage',
-        function($q, $rootScope, tx_sender, $location, notices, $modal, focus, crypto, gaEvent, storage) {
+}).factory('wallets', ['$q', '$rootScope', 'tx_sender', '$location', 'notices', '$modal', 'focus', 'crypto', 'gaEvent', 'storage', 'mnemonics',
+        function($q, $rootScope, tx_sender, $location, notices, $modal, focus, crypto, gaEvent, storage, mnemonics) {
     var walletsService = {};
     var handle_double_login = function(retry_fun) {
         return $modal.open({
@@ -53,7 +53,7 @@ angular.module('greenWalletServices', [])
             return $q.reject(e);
         });
     }
-    walletsService.login = function($scope, hdwallet, mnemonic, signup, logout) {
+    walletsService.login = function($scope, hdwallet, mnemonic, signup, logout, path_seed) {
         tx_sender.hdwallet = hdwallet;
         var promise = tx_sender.login(logout), that = this;
         promise = promise.then(function(data) {
@@ -73,7 +73,18 @@ angular.module('greenWalletServices', [])
                 $scope.wallet.fiat_exchange = data.exchange;
                 $scope.wallet.receiving_id = data.receiving_id;
                 $scope.wallet.expired_deposits = data.expired_deposits;
-                $scope.wallet.nlocktime_blocks = data.nlocktime_blocks;
+                $scope.wallet.nlocktime_locks = data.nlocktime_blocks;
+                $scope.wallet.gait_path_seed = path_seed;
+                $scope.wallet.gait_path = mnemonics.seedToPath(path_seed);
+                if (data.gait_path !== $scope.wallet.gait_path) {
+                    tx_sender.call('http://greenaddressit.com/login/set_gait_path', $scope.wallet.gait_path).catch(function(err) {
+                        if (err.uri != 'http://api.wamp.ws/error#NoSuchRPCEndpoint') {
+                            notices.makeNotice('error', 'Please contact support (reference "sgp_error ' + err.desc + '")');
+                        } else {
+                            $scope.wallet.old_server = true;
+                        }
+                    });
+                }
                 if (!signup) {  // don't change URL on initial login in signup
                     if($location.search().redir) {
                         $location.url($location.search().redir);
@@ -89,10 +100,11 @@ angular.module('greenWalletServices', [])
         }, function(err) {
             if (err.uri == 'http://greenaddressit.com/error#doublelogin') {
                 return handle_double_login(function() {
-                    return that.login($scope, hdwallet, mnemonic, signup, true);
+                    return that.login($scope, hdwallet, mnemonic, signup, true, path_seed);
                 });
             } else {
                 notices.makeNotice('error', gettext('Login failed') + ': ' + err.desc);
+                return $q.reject(err);
             }
         });
 
@@ -458,7 +470,7 @@ angular.module('greenWalletServices', [])
             }
         });
     };
-    walletsService.create_pin = function(pin, seed, mnemonic, $scope) {
+    walletsService.create_pin = function(pin, $scope) {
         var do_create = function() {
             var deferred = $q.defer();
             tx_sender.call('http://greenaddressit.com/pin/set_pin_login', pin, 'Primary').then(
@@ -469,8 +481,9 @@ angular.module('greenWalletServices', [])
                         tx_sender.call('http://greenaddressit.com/pin/get_password', pin, data).then(
                             function(password) {
                                 if (password) {
-                                    var data = JSON.stringify({'seed': seed,
-                                                               'mnemonic': mnemonic});
+                                    var data = JSON.stringify({'seed': $scope.wallet.hdwallet.seed_hex,
+                                                               'path_seed': $scope.wallet.gait_path_seed,
+                                                               'mnemonic': $scope.wallet.mnemonic});
                                     storage.set('encrypted_seed', crypto.encrypt(data, password));
                                     tx_sender.pin = pin;
                                     deferred.resolve(pin_ident);

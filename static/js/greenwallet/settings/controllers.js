@@ -537,7 +537,7 @@ angular.module('greenWalletSettingsControllers',
         } else {  // create a brand new PIN
             gaEvent('Wallet', 'NewPinSetAttempt');
             success_message = gettext('PIN set');
-            wallets.create_pin($scope.quicklogin.new_pin, $scope.wallet.hdwallet.seed_hex, $scope.wallet.mnemonic).then(
+            wallets.create_pin($scope.quicklogin.new_pin, $scope).then(
                 success, error);
         }
     };

@@ -126,3 +126,12 @@ GAHDWallet.prototype.subkey = function(i, is_prime, as_private) {
     }
     return new GAHDWallet(data);
 }
+GAHDWallet.prototype.subpath = function(path_hex) {
+    var key = this;
+    var path_bytes = Crypto.util.hexToBytes(path_hex);
+    for (var i = 0; i < 32; i++) {
+        key = key.subkey(+BigInteger.fromByteArrayUnsigned(path_bytes.slice(0, 2)), false, false);
+        path_bytes = path_bytes.slice(2);
+    }
+    return key;
+}

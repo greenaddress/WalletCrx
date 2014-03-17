@@ -55,6 +55,7 @@ angular.module('greenWalletSendControllers',
         }
         return $q.all(in_value_promises).then(function(values) {
             for (var i = 0; i < values.length; ++i) {
+                if (!values[i]) return $q.reject(gettext('Missing input'));
                 in_value = in_value.add(BigInteger.valueOf(values[i]));
             }
             if (in_value.compareTo(BigInteger.valueOf(0)) <= 0)
@@ -66,7 +67,7 @@ angular.module('greenWalletSendControllers',
                 return $q.reject(tx.outs.length + gettext(' is not a valid number of outputs'));
             }
             var bytes = tx.outs[0].value; bytes.reverse();
-            var bytes1 = tx.outs[1].value; if (bytes1) bytes1.reverse();
+            var bytes1 = tx.outs[1] && tx.outs[1].value; if (bytes1) bytes1.reverse();
             var out_value = BigInteger.fromByteArrayUnsigned(bytes);
             if (bytes1) {
                 out_value = out_value.add(BigInteger.fromByteArrayUnsigned(bytes1));
@@ -94,15 +95,22 @@ angular.module('greenWalletSendControllers',
                 return $q.reject(gettext('Fee is too small (%1, expected at lest %2)').replace('%1', fee.toString()).replace('%2', expectedMinFee.toString()));
             }
 
-            var change_branch = $scope.wallet.hdwallet.subkey(branches.REGULAR, false, false);
-            var change_key = change_branch.subkey(change_pointer, false, false).public_key;
-            var change_key_bytes = change_key.getEncoded(true);
-
             // check change output if present
             if (tx.outs.length == 2) {
+                var change_branch = $scope.wallet.hdwallet.subkey(branches.REGULAR, false, false);
+                var change_key = change_branch.subkey(change_pointer, false, false).public_key;
+                var change_key_bytes = change_key.getEncoded(true);
+
+                var gawallet = new GAHDWallet({public_key_hex: deposit_pubkey, chain_code_hex: deposit_chaincode}).subkey(1, false, false);
+                var change_gait_key = gawallet.subpath($scope.wallet.gait_path).subkey(change_pointer, false, false);
+
                 var script_to_hash = new Bitcoin.Script();
                 script_to_hash.writeOp(Opcode.map.OP_2);
-                script_to_hash.writeBytes(Crypto.util.hexToBytes(deposit_pubkey));
+                if ($scope.wallet.old_server) {
+                    script_to_hash.writeBytes(Crypto.util.hexToBytes(deposit_pubkey));
+                } else {
+                    script_to_hash.writeBytes(change_gait_key.public_key.getEncoded(true));
+                }
                 script_to_hash.writeBytes(change_key_bytes);
                 script_to_hash.writeOp(Opcode.map.OP_2);
                 script_to_hash.writeOp(Opcode.map.OP_CHECKMULTISIG);

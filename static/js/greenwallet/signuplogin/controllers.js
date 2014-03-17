@@ -19,36 +19,40 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         gaEvent('Login', 'MnemonicLogin');
         state.mnemonic_error = state.login_error = undefined;
         mnemonics.validateMnemonic(state.mnemonic).then(function() {
-            mnemonics.toSeed(state.mnemonic).then(function(seed) {
-                var hdwallet = new GAHDWallet({seed_hex: seed});
-                state.seed_progress = 100;
-                state.seed = seed;
-                var do_login = function() {
-                    return wallets.login($scope, hdwallet, state.mnemonic).then(function(data) {
-                        if (!data) {
-                            gaEvent('Login', 'MnemonicLoginFailed');
-                            state.login_error = true;
-                        } else {
-                            gaEvent('Login', 'MnemonicLoginSucceeded');
-                        }
-                    });
-                };
-                if (!state.has_pin && !state.refused_pin) {
-                    gaEvent('Login', 'MnemonicLoginPinModalShown');
-                    modal = $modal.open({
-                        templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_pin.html',
-                        scope: $scope
-                    });
-                    modal.opened.then(function() { focus("pinModal"); });
-                    return modal.result.then(do_login, function() {
-                        storage.set('pin_refused', true);
+            return mnemonics.toSeed(state.mnemonic).then(function(seed) {
+                return mnemonics.toSeed(state.mnemonic, 'greenaddress_path').then(function(path_seed) {
+                    var hdwallet = new GAHDWallet({seed_hex: seed});
+                    state.seed_progress = 100;
+                    state.seed = seed;
+                    var do_login = function() {
+                        return wallets.login($scope, hdwallet, state.mnemonic, false, false, path_seed).then(function(data) {
+                            if (!data) {
+                                gaEvent('Login', 'MnemonicLoginFailed');
+                                state.login_error = true;
+                            } else {
+                                gaEvent('Login', 'MnemonicLoginSucceeded');
+                            }
+                        });
+                    };
+                    if (!state.has_pin && !state.refused_pin) {
+                        gaEvent('Login', 'MnemonicLoginPinModalShown');
+                        modal = $modal.open({
+                            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_pin.html',
+                            scope: $scope
+                        });
+                        modal.opened.then(function() { focus("pinModal"); });
+                        return modal.result.then(do_login, function() {
+                            storage.set('pin_refused', true);
+                            return do_login();
+                        })
+                    } else {
                         return do_login();
-                    })
-                } else {
-                    return do_login();
-                }
+                    }
+                }, undefined, function(progress) {
+                    state.seed_progress = Math.round(50 + progress/2);
+                });
             }, undefined, function(progress) {
-                state.seed_progress = progress;
+                state.seed_progress = Math.round(progress/2);
             }).catch(function() {
                 state.seed_progress = undefined;
             });
@@ -79,7 +83,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         if (!valid) {
             $scope.state.error = true;
         } else {
-            wallets.create_pin(state.new_pin_value, state.seed, state.mnemonic, $scope).then(function() {
+            wallets.create_pin(state.new_pin_value, $scope).then(function() {
                 gaEvent('Login', 'PinSet');
                 modal.close();
             }, function(error) {
@@ -158,6 +162,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             function(password) {
                 if (!password) {
                     gaEvent('Login', 'PinLoginFailed', 'empty password');
+                    state.login_error = true;
                     return;
                 }
                 tx_sender.pin_ident = state.pin_ident;
@@ -166,15 +171,32 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 if(decoded && JSON.parse(decoded).seed) {
                     gaEvent('Login', 'PinLoginSucceeded');
                     var parsed = JSON.parse(decoded);
-                    var hdwallet = new GAHDWallet({seed_hex: parsed.seed});
-                    wallets.login($scope, hdwallet, parsed.mnemonic);
+                    if (!parsed.path_seed) {
+                        return mnemonics.toSeed(parsed.mnemonic, 'greenaddress_path').then(function(path_seed) {
+                            parsed.path_seed = path_seed;
+                            storage.set('encrypted_seed', crypto.encrypt(JSON.stringify(parsed), password));
+                            var path = mnemonics.seedToPath(path_seed);
+                            var hdwallet = new GAHDWallet({seed_hex: parsed.seed});
+                            return wallets.login($scope, hdwallet, state.mnemonic, false, false, path_seed);
+                        }, undefined, function(progress) {
+                            state.seed_progress = progress;
+                        });
+                    } else {
+                        var hdwallet = new GAHDWallet({seed_hex: parsed.seed});
+                        return wallets.login($scope, hdwallet, parsed.mnemonic, false, false, parsed.path_seed);
+                    }
                 } else {
                     gaEvent('Login', 'PinLoginFailed', 'Wallet decryption failed');
+                    state.login_error = true;
                     notices.makeNotice('error', gettext('Wallet decryption failed'));
                 }
             }, function(e) {
                 gaEvent('Login', 'PinLoginFailed', e.desc);
                 notices.makeNotice('error', e.desc);
+                state.login_error = true;
+            }).catch(function(e) {
+                gaEvent('Login', 'PinLoginFailed', e.desc);
+                state.login_error = true;
             });
     }
 }]);
