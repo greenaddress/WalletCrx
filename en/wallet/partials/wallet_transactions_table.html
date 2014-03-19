@@ -6,7 +6,7 @@
         ng-class="{'glyphicon-chevron-down': reversed, 'glyphicon-chevron-up': !reversed}"></i> Date</a></th>
       <th>Description</th>
       <th class="text-right"><a href="" ng-click="order_by == 'value_sort' ? (reversed = !reversed) : (order_by = 'value_sort')"><i ng-show="order_by == 'value_sort'" class="glyphicon"
-        ng-class="{'glyphicon-chevron-down': reversed, 'glyphicon-chevron-up': !reversed}"></i>mBTC</a></th>
+        ng-class="{'glyphicon-chevron-down': reversed, 'glyphicon-chevron-up': !reversed}"></i>(( wallet.unit ))</a></th>
     </tr>
   </thead>
   
@@ -38,8 +38,8 @@
         </div>
       </td>
       <td class="amount">
-        <span class="amount" ng-class="{'amount-plus': transaction.positive, 'amount-minus': transaction.negative}" ng-hide="!transaction.nonzero && transaction.redeemable">(( transaction.value|format_btc ))</span>
-        <span class="amount amount-redeemable" ng-show="!transaction.nonzero && transaction.redeemable">(( transaction.redeemable_value|format_btc ))</span><br>
+        <span class="amount" ng-class="{'amount-plus': transaction.positive, 'amount-minus': transaction.negative}" ng-hide="!transaction.nonzero && transaction.redeemable">(( transaction.value|format_btc:wallet.unit ))</span>
+        <span class="amount amount-redeemable" ng-show="!transaction.nonzero && transaction.redeemable">(( transaction.redeemable_value|format_btc:wallet.unit ))</span><br>
         <span class="amount info" ng-class="{'amount-plus': transaction.positive, 'amount-minus': transaction.negative}">(( transaction.value_fiat|number:2 )) (( wallet.transactions.fiat_currency ))</span>
       </td>
     </tr>

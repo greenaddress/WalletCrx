@@ -69,6 +69,7 @@ angular.module('greenWalletServices', [])
                 } catch(e) {
                     $scope.wallet.appearance = {};
                 }
+                $scope.wallet.unit = $scope.wallet.appearance.unit || 'mBTC';
                 $scope.wallet.cache_password = data.cache_password;
                 $scope.wallet.fiat_exchange = data.exchange;
                 $scope.wallet.receiving_id = data.receiving_id;
@@ -124,6 +125,7 @@ angular.module('greenWalletServices', [])
             } catch(e) {
                 $scope.wallet.appearance = {};
             }
+            $scope.wallet.unit = $scope.wallet.appearance.unit || 'mBTC';
             $scope.wallet.cache_password = data.cache_password;
             $scope.wallet.fiat_exchange = data.exchange;
             $scope.wallet.receiving_id = data.receiving_id;
@@ -440,6 +442,7 @@ angular.module('greenWalletServices', [])
         }
     }
     walletsService.addCurrencyConversion = function($scope, model_name) {
+        var div = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
         $scope.$watch(model_name+'.amount', function(newValue, oldValue) {
             if (newValue === oldValue) return;
             if ($scope[model_name].updated_by_conversion) {
@@ -449,7 +452,7 @@ angular.module('greenWalletServices', [])
                 if (!newValue) {
                     $scope[model_name].amount_fiat = '';
                 } else {
-                    $scope[model_name].amount_fiat = newValue * $scope.wallet.fiat_rate / 1000;
+                    $scope[model_name].amount_fiat = newValue * $scope.wallet.fiat_rate / div;
                     $scope[model_name].amount_fiat = (Math.round($scope[model_name].amount_fiat * 100) / 100).toString();
                 }
                 if ($scope[model_name].amount_fiat !== oldFiat) {
@@ -466,7 +469,7 @@ angular.module('greenWalletServices', [])
                 if (!newValue) {
                     $scope[model_name].amount = '';
                 } else {
-                    $scope[model_name].amount = (1000 * newValue / $scope.wallet.fiat_rate).toString();
+                    $scope[model_name].amount = (div * newValue / $scope.wallet.fiat_rate).toString();
                 }
                 if ($scope[model_name].amount !== oldBTC) {
                     $scope[model_name].updated_by_conversion = true;

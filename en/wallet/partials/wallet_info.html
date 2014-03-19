@@ -8,7 +8,7 @@
 <div class="row" ng-show="wallet.has_graph">
   <div class="col-md-12">
     <div class="sub-header">
-      mBTC
+      (( wallet.unit ))
       <!-- <span class="header-options">
         <ul class="nav nav-pills pull-right">
           <li class="active"><a href="">Year</a></li>
@@ -37,7 +37,7 @@
   <div class="col-md-12">
     <!--
     <div>((wallet.n_tx))</div>
-    <div>((wallet.final_balance|format_btc))</div>
+    <div>((wallet.final_balance|format_btc:wallet.unit))</div>
     <ul>
     <li>Primary address: (( wallet.hdwallet.getBitcoinAddress().toString() ))</li>
     <li ng-hide="wallet.p2sh"><a href="" ng-click="fund()">Fund</a></li>

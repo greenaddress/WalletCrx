@@ -76,12 +76,13 @@ angular.module('greenWalletReceiveControllers',
         },
         show_sweep: cur_coin_version == 0  // no testnet
     };
+    var div = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
     var formatAmountBitcoin = function(amount) {
-        var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(new BigInteger('1000'));
+        var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(BigInteger.valueOf(div));
         return Bitcoin.Util.formatValue(satoshi.toString());
     };
     var formatAmountSatoshi = function(amount) {
-        var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(new BigInteger('1000'));
+        var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(BigInteger.valueOf(div));
         return satoshi.toString();
     }
     $scope.show_bitcoin_uri = function(show_qr) {

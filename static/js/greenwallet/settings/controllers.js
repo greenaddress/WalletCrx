@@ -260,6 +260,7 @@ angular.module('greenWalletSettingsControllers',
     var settings = $scope.settings = {
         noLocalStorage: storage.noLocalStorage,
         currency: $scope.wallet.fiat_currency,
+        unit: $scope.wallet.unit,
         exchange: $scope.wallet.fiat_exchange,
         notifications: angular.copy($scope.wallet.appearance.notifications_settings || {}),
         updating_display_fiat: false,
@@ -303,6 +304,7 @@ angular.module('greenWalletSettingsControllers',
             });
         }
     };
+    $scope.settings.available_units = ['BTC', 'mBTC', 'µBTC'];
     tx_sender.call('http://greenaddressit.com/login/available_currencies').then(function(data) {
         $scope.settings.available_currencies = data;
     });
@@ -382,6 +384,21 @@ angular.module('greenWalletSettingsControllers',
     };
     watchNotificationsEmail('incoming', 'EmailIncomingNotifications');
     watchNotificationsEmail('outgoing', 'EmailOutgoingNotifications');
+    $scope.$watch('settings.unit', function(newValue, oldValue) {
+        if (oldValue !== newValue && !settings.updating_unit && newValue != $scope.wallet.appearance.unit) {
+            settings.unit = oldValue;
+            settings.updating_unit = true;
+            wallets.updateAppearance($scope, 'unit', newValue).then(function() {
+                gaEvent('Wallet', 'UnitChanged', newValue);
+                settings.unit = $scope.wallet.unit = newValue;
+                settings.updating_unit = false;
+            }).catch(function(err) {
+                gaEvent('Wallet', 'UnitChangeFailed', err.desc);
+                notices.makeNotice('error', err.desc);
+                settings.updating_unit = false;
+            });
+        }
+    });
     $scope.show_mnemonic = function() {
         gaEvent('Wallet', 'ShowMnemonic');
         $modal.open({

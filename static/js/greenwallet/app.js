@@ -56,12 +56,13 @@ angular.module('greenWalletBaseApp', deps)
         }
     };
 }]).filter('format_btc', function() {
-    return function format_btc(satoshis) {
-        satoshis = (new BigInteger((satoshis || 0).toString())).multiply(new BigInteger('1000'));
+    return function format_btc(satoshis, unit) {
+        var mul = {'µBTC': '1000000', 'mBTC': '1000', 'BTC': '1'}
+        satoshis = (new BigInteger((satoshis || 0).toString())).multiply(new BigInteger(mul[unit]));
         if (satoshis.compareTo(new BigInteger('0')) < 0) {
-            return '-'+Bitcoin.Util.formatValue(-satoshis) + ' ' + 'm'+cur_coin;
+            return '-'+Bitcoin.Util.formatValue(-satoshis) + ' ' + unit;
         } else {
-            return Bitcoin.Util.formatValue(satoshis) + ' ' + 'm'+cur_coin;
+            return Bitcoin.Util.formatValue(satoshis) + ' ' + unit;
         }
     };
 }).filter('startFrom', function() {

@@ -42,14 +42,15 @@ angular.module('greenWalletInfoControllers',
             return [Math.round(parent.offsetWidth), Math.round(parent.offsetWidth * (290/920))];
         };
         var size = getSize();
-        bMin /= Math.pow(10, 5); bMax /= Math.pow(10, 5);
+        var pow = {'BTC': 8, 'mBTC': 5, 'µBTC': 2}[$scope.wallet.unit];
+        bMin /= Math.pow(10, pow); bMax /= Math.pow(10, pow);
         var dScale = (bMax - bMin) * 0.1;
         btcGraph.width(size[0]).height(size[1])
             .colors(['#69b16e'])
             .margins({top: 10, right: 50, bottom: 30, left: 60})
             .dimension(byDate)
             .valueAccessor(function (p) {
-                return p.value / Math.pow(10, 5);
+                return p.value / Math.pow(10, pow);
             })
             .group(byDate.group().reduceSum(function(p) { return p.balance; }))
             .x(d3.time.scale().domain([balances_arr[0].date, balances_arr[balances_arr.length-1].date]))

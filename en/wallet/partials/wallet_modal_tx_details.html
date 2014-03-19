@@ -6,7 +6,7 @@
     <ul>
         <li>Timestamp: (( selected_transaction.ts ))</li>
         <li>Hash: (( selected_transaction.txhash ))</li>
-        <li>Fee: (( selected_transaction.fee | format_btc ))</li>
+        <li>Fee: (( selected_transaction.fee | format_btc:wallet.unit ))</li>
     </ul>
 
     <h4>Inputs</h4>
@@ -14,7 +14,7 @@
         <tr><th>Address</th><th>Amount</th></tr>
         <tr ng-repeat="input in selected_transaction.inputs">
             <td>(( input.ad ))</td>
-            <td>(( input.value | format_btc ))</td>
+            <td>(( input.value | format_btc:wallet.unit ))</td>
         </tr>
     </table>
 
@@ -27,7 +27,7 @@
             <a ng-hide="output.nlocktime_json || output.is_spent || !output.is_relevant" href="" ng-click="generate_nlocktime(selected_transaction, output)">request nLockTime</a>
             <p style="word-wrap: break-word; width: 400px;" ng-show="output.nlocktime_json">nLockTime: (( output.nlocktime_json ))</p>
             </td>
-            <td>(( output.value | format_btc ))</td>
+            <td>(( output.value | format_btc:wallet.unit ))</td>
         </tr>
     </table>
 </div>
