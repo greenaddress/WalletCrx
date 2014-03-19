@@ -215,7 +215,29 @@
     </div>
   </div>
 </div>
-
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Link third party accounts</div>
+    <div class="sub-header-desc">Allow social payments and watch-only login to your wallet via third party accounts.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController" ng-submit="thirdparty.customstate.save()">
+    
+      <button class="btn btn-block-xs btn-default" ng-click="thirdparty.customstate.enabled=!thirdparty.customstate.enabled" ng-disabled="thirdparty.toggling_custom"><i class="glyphicon glyphicon-lock"></i> Custom Login</button>
+      <label class="switch">
+        <input type="checkbox" class="switch" ng-model="thirdparty.customstate.enabled" ng-disabled="thirdparty.toggling_custom">
+        <span class="switch"></span>
+      </label>
+      <div ng-hide="!thirdparty.customstate.enabled && !thirdparty.toggling_custom && !thirdparty.customstate.username">
+        <input class="form-control" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" type="text" ng-model="thirdparty.customstate.username" placeholder="Username" />
+        <input class="form-control" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" type="password" ng-model="thirdparty.customstate.password" placeholder="Password" />
+        <input type="submit" class="btn btn-sm btn-default" value="(( thirdparty.customstate.save_button_label ))" ng-show="thirdparty.customstate.username && thirdparty.customstate.password" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" ng-click="thirdparty.customstate.save()" />
+      </div>
+    
+    </form>
+  </div>
+</div>
 <hr class="double">
 <div class="row">
   <div class="col-md-3">
