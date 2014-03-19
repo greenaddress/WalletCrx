@@ -6,10 +6,10 @@
 <div submittable>
     <div class="modal-body">
         <p>You must provide 2 factor authentication code to disable it</p>
-        <form class="form-horizontal" ng-submit="disable_2fa()"><div class="control-group">
+        <form class="form-inline" ng-submit="disable_2fa()"><div class="control-group">
             <div class="alert alert-error" ng-show="disable_2fa_error">(( disable_2fa_error ))</div>
             <p>Please enter it here:
-                <input clickfix focus-on="disableTwoFactorModal" class="pin" type="tel" mask-input required="required"
+                <input clickfix focus-on="disableTwoFactorModal" class="form-control pin" type="tel" mask-input required="required"
                    maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" ng-model="twofactor_state.disable_2fa_code" /></p>
             <input type="submit" class="hide" submitter />
         </form>

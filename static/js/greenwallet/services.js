@@ -382,14 +382,15 @@ angular.module('greenWalletServices', [])
         }
         return d.promise;
     };
-    walletsService.get_two_factor_code = function($scope) {
+    walletsService.get_two_factor_code = function($scope, gauth) {
         var deferred = $q.defer();
         walletsService.getTwoFacConfig($scope).then(function(twofac_data) {
             if (twofac_data.any) {
                 $scope.twofactor_method_names = {
                     'gauth': 'Google Authenticator',
                     'email': 'Email',
-                    'sms': 'SMS'
+                    'sms': 'SMS',
+                    'phone': gettext('Phone')
                 };
                 $scope.twofactor_methods = [];
                 for (var key in twofac_data) {
@@ -397,6 +398,8 @@ angular.module('greenWalletServices', [])
                         $scope.twofactor_methods.push(key);
                     }
                 };
+                var order = ['gauth', 'email', 'sms', 'phone'];
+                $scope.twofactor_methods.sort(function(a,b) { return order.indexOf(a)-order.indexOf(b); })
                 $scope.twofac = {
                     twofactor_method: $scope.twofactor_methods[0],
                     codes_requested: {},
@@ -411,6 +414,7 @@ angular.module('greenWalletServices', [])
                             this.requesting_code = false;
                         });
                     }};
+                $scope.twofac_modal_gauth = gauth;
                 var modal = $modal.open({
                     templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_2fa.html',
                     scope: $scope,

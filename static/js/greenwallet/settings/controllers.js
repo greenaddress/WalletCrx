@@ -16,6 +16,7 @@ angular.module('greenWalletSettingsControllers',
             }
             $scope.wallet.twofac_email_confirmed = twofactor_state.twofac_email_confirmed = data.email;
             twofactor_state.twofac_sms_confirmed = data.sms;
+            twofactor_state.twofac_phone_confirmed = data.phone;
         }, function(err) {
             notices.makeNotice('error', 'Error fetching two factor authentication configuration: ' + err.desc);
             twofactor_state.twofactor_type = 'error';
@@ -41,6 +42,10 @@ angular.module('greenWalletSettingsControllers',
         gaEvent('Wallet', 'SMS2FATabClicked');
         twofactor_state.twofactor_type = 'sms';
     };
+    $scope.show_phone_auth = function() {
+        gaEvent('Wallet', 'Phone2FATabClicked');
+        twofactor_state.twofactor_type = 'phone';
+    };
     var modal;
     $scope.disable_2fa_modal = function() {
         if (twofactor_state.twofactor_type == 'email') {
@@ -50,6 +55,11 @@ angular.module('greenWalletSettingsControllers',
         }
         if (twofactor_state.twofactor_type == 'sms') {
             tx_sender.call('http://greenaddressit.com/twofactor/request_sms').catch(function(err) {
+                notices.makeNotice('error', err.desc);
+            });
+        }
+        if (twofactor_state.twofactor_type == 'phone') {
+            tx_sender.call('http://greenaddressit.com/twofactor/request_phone').catch(function(err) {
                 notices.makeNotice('error', err.desc);
             });
         }
@@ -64,7 +74,8 @@ angular.module('greenWalletSettingsControllers',
     };
     $scope.enable_gauth = function() {
         notices.setLoadingText("Validating code");
-        tx_sender.call('http://greenaddressit.com/twofactor/enable_gauth', twofactor_state.gauth_code).then(
+        wallets.get_two_factor_code($scope, true).then(function(twofac_data) {
+            tx_sender.call('http://greenaddressit.com/twofactor/enable_gauth', twofac_data.gauth_code || twofactor_state.gauth_code, twofac_data).then(
             function() {
                 gaEvent('Wallet', 'EnableGauth2FASuccessful');
                 notices.makeNotice('success', 'Enabled Google Authenticator');
@@ -75,6 +86,7 @@ angular.module('greenWalletSettingsControllers',
                 gaEvent('Wallet', 'EnableGauth2FAFailed', err.desc);
                 notices.makeNotice('error', err.desc);
             });
+        })
     };
     $scope.disable_2fa = function() {
         notices.setLoadingText("Validating code");
@@ -119,21 +131,37 @@ angular.module('greenWalletSettingsControllers',
                     gaEvent('Wallet', 'DisableSMS2FAFailed', err.desc);
                     $scope.disable_2fa_error = err.desc;
                 })
+        } else if (twofactor_state.twofactor_type == 'phone') {
+            tx_sender.call('http://greenaddressit.com/twofactor/disable_phone', twofactor_state.disable_2fa_code).then(
+                function() {
+                    gaEvent('Wallet', 'DisablePhone2FASuccessful');
+                    twofactor_state.disable_2fa_code = '';
+                    notices.makeNotice('success', 'Disabled phone call two factor authentication');
+                    twofactor_state.twofac_phone_confirmed = false;
+                    twofactor_state.phone_set = false;
+                    modal.close();
+                    update_wallet();
+                }, function(err) {
+                    gaEvent('Wallet', 'DisablePhone2FAFailed', err.desc);
+                    $scope.disable_2fa_error = err.desc;
+                })
         }
     };
     $scope.start_enabling_email = function() {
         if (twofactor_state.enabling_email) return;
         twofactor_state.enabling_email = true;
-        tx_sender.call('http://greenaddressit.com/twofactor/init_enable_email', twofactor_state.new_twofac_email).then(
-            function() {
-                gaEvent('Wallet', 'StartEnablingEmail2FASuccessful');
-                twofactor_state.enabling_email = false;
-                twofactor_state.email_set = true;
-            }, function(err) {
-                gaEvent('Wallet', 'StartEnablingEmail2FAFailed', err.desc);
-                twofactor_state.enabling_email = false;
-                notices.makeNotice('error', err.desc);
-            })
+        wallets.get_two_factor_code($scope).then(function(twofac_data) {
+            tx_sender.call('http://greenaddressit.com/twofactor/init_enable_email', twofactor_state.new_twofac_email, twofac_data).then(
+                function() {
+                    gaEvent('Wallet', 'StartEnablingEmail2FASuccessful');
+                    twofactor_state.enabling_email = false;
+                    twofactor_state.email_set = true;
+                }, function(err) {
+                    gaEvent('Wallet', 'StartEnablingEmail2FAFailed', err.desc);
+                    twofactor_state.enabling_email = false;
+                    notices.makeNotice('error', err.desc);
+                });
+        });
     };
     $scope.cancel_twofac_email = function() {
         twofactor_state.email_set = false;
@@ -155,16 +183,18 @@ angular.module('greenWalletSettingsControllers',
     $scope.start_enabling_sms = function() {
         if (twofactor_state.enabling_sms) return;
         twofactor_state.enabling_sms = true;
-        tx_sender.call('http://greenaddressit.com/twofactor/init_enable_sms', twofactor_state.new_twofac_sms).then(
-            function() {
-                gaEvent('Wallet', 'StartEnablingSMS2FASuccessful');
-                twofactor_state.enabling_sms = false;
-                twofactor_state.sms_set = true;
-            }, function(err) {
-                gaEvent('Wallet', 'StartEnablingSMS2FAFailed', err.desc);
-                twofactor_state.enabling_sms = false;
-                notices.makeNotice('error', err.desc);
-            })
+        wallets.get_two_factor_code($scope).then(function(twofac_data) {
+            tx_sender.call('http://greenaddressit.com/twofactor/init_enable_sms', twofactor_state.new_twofac_sms, twofac_data).then(
+                function() {
+                    gaEvent('Wallet', 'StartEnablingSMS2FASuccessful');
+                    twofactor_state.enabling_sms = false;
+                    twofactor_state.sms_set = true;
+                }, function(err) {
+                    gaEvent('Wallet', 'StartEnablingSMS2FAFailed', err.desc);
+                    twofactor_state.enabling_sms = false;
+                    notices.makeNotice('error', err.desc);
+                })
+        });
     };
     $scope.cancel_twofac_sms = function() {
         twofactor_state.sms_set = false;
@@ -180,6 +210,39 @@ angular.module('greenWalletSettingsControllers',
                 update_wallet();
             }, function(err) {
                 gaEvent('Wallet', 'EnableSMS2FAFailed', err.desc);
+                notices.makeNotice('error', err.desc);
+            });
+    };
+    $scope.start_enabling_phone = function() {
+        if (twofactor_state.enabling_phone) return;
+        twofactor_state.enabling_phone = true;
+        wallets.get_two_factor_code($scope).then(function(twofac_data) {
+            tx_sender.call('http://greenaddressit.com/twofactor/init_enable_phone', twofactor_state.new_twofac_phone, twofac_data).then(
+                function() {
+                    gaEvent('Wallet', 'StartEnablingPhone2FASuccessful');
+                    twofactor_state.enabling_phone = false;
+                    twofactor_state.phone_set = true;
+                }, function(err) {
+                    gaEvent('Wallet', 'StartEnablingPhone2FAFailed', err.desc);
+                    twofactor_state.enabling_phone = false;
+                    notices.makeNotice('error', err.desc);
+                });
+        });
+    };
+    $scope.cancel_twofac_phone = function() {
+        twofactor_state.phone_set = false;
+    };
+    $scope.enable_twofac_phone = function() {
+        notices.setLoadingText("Validating code");
+        tx_sender.call('http://greenaddressit.com/twofactor/enable_phone', twofactor_state.twofac_phone_code).then(
+            function() {
+                gaEvent('Wallet', 'EnablePhone2FASuccessful');
+                notices.makeNotice('success', 'Enabled phone two factor authentication');
+                twofactor_state.twofac_phone_code = '';
+                twofactor_state.twofac_phone_confirmed = true;
+                update_wallet();
+            }, function(err) {
+                gaEvent('Wallet', 'EnablePhone2FAFailed', err.desc);
                 notices.makeNotice('error', err.desc);
             });
     };

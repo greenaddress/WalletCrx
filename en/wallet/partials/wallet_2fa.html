@@ -9,6 +9,9 @@
   <li ng-class="{active: twofactor_state.twofactor_type == 'sms'}">
       <a href="" ng-click="show_sms_auth()">SMS</a>
   </li>
+  <li ng-class="{active: twofactor_state.twofactor_type == 'phone'}">
+      <a href="" ng-click="show_phone_auth()">Phone</a>
+  </li>
 </ul>
 
 <div ng-show="twofactor_state.twofactor_type == 'gauth'">
@@ -39,7 +42,12 @@
             </div>
         </div>
         <hr class="hidden-xs">
-        <div class="row">
+        <div class="row" ng-show="twofactor_state.twofac_email_confirmed || twofac_state.twofac_sms_confirmed || twofac_phone_confirmed">
+            <div class="col-sm-4 col-sm-offset-4">
+                <button class="btn btn-default" ng-click="enable_gauth()">Enable Google Authenticator</button>
+            </div>
+        </div>
+        <div class="row" ng-hide="twofactor_state.twofac_email_confirmed || twofac_state.twofac_sms_confirmed || twofac_phone_confirmed">
             <div class="col-sm-12">
                 <form role="form" class="form-horizontal" ng-submit="enable_gauth()">
                     <div class="form-group">
@@ -140,6 +148,48 @@
                                 placeholder="Please enter received code" />
                             <span class="input-group-btn">
                                 <input ng-disabled="!twofactor_state.twofac_sms_code" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Enable"/><a href="" class="btn btn-warning" ng-click="cancel_twofac_sms()">Cancel</a>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div ng-show="twofactor_state.twofactor_type == 'phone'">
+    <p class="well" ng-show="twofactor_state.twofac_phone_confirmed">Phone call two factor authentication is enabled.
+        <a class="btn btn-danger" href="" ng-click="disable_2fa_modal()">Disable</a></p>
+    <div ng-show="!twofactor_state.twofac_phone_confirmed">
+        <div ng-show="!twofactor_state.phone_set">
+            <form role="form" class="form-horizontal" ng-submit="start_enabling_phone()" style="margin:25px 0;">
+                <div class="form-group">
+                    <label class="col-sm-4 control-label" for="wallet-twofac-phone">Your phone number</label>
+                    <div class="col-sm-7">
+                        <div class="input-group">
+                            <input class="form-control" ng-model="twofactor_state.new_twofac_phone" id="wallet-twofac-phone"
+                                type="tel" required="required" placeholder="+NN... Please enter your phone" />
+                            <span class="input-group-btn">
+                                <input ng-disabled="!twofactor_state.new_twofac_phone" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Enable"/>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <div ng-show="twofactor_state.phone_set">
+            <p>You need to provide one code to set up the two factor authentication.<br>                Please check your phone and provide the code.
+            </p>
+            <form role="form" class="form-horizontal" ng-submit="enable_twofac_phone()" style="margin:25px 0;">
+                <div class="form-group">
+                    <label class="col-sm-4 control-label" for="wallet-phone-conf-code">Phone code</label>
+                    <div class="col-sm-7">
+                        <div class="input-group">
+                            <input ng-model="twofactor_state.twofac_phone_code" class="form-control pin" type="tel" mask-input required="required"
+                                maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" id="wallet-phone-conf-code"
+                                placeholder="Please enter received code" />
+                            <span class="input-group-btn">
+                                <input ng-disabled="!twofactor_state.twofac_phone_code" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Enable"/><a href="" class="btn btn-warning" ng-click="cancel_twofac_phone()">Cancel</a>
                             </span>
                         </div>
                     </div>
