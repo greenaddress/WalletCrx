@@ -243,7 +243,7 @@
           <input type="submit" class="btn btn-sm btn-default" value="Save" ng-show="settings.nlocktime.blocks_new != settings.nlocktime.blocks" ng-disabled="settings.nlocktime.updating_nlocktime_blocks"  />
           <br />(( settings.nlocktime.blocks_userfriendly ))
         </div>
-        <div ng-hide="settings.notifications.email_incoming && settings.notifications.email_outgoing">
+        <div ng-hide="settings.notifications.email_incoming && settings.notifications.email_outgoing && wallet.twofac_email_confirmed">
           <hr>
           <small class="text-info"><strong>NOTE</strong>: Both outgoing and incoming transaction notifications must be enabled for this feature to work.</small>
         </div>

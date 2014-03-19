@@ -1,7 +1,7 @@
 angular.module('greenWalletReceiveControllers',
     ['greenWalletServices'])
-.controller('ReceiveController', ['$rootScope', '$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent', '$modal',
-        function InfoController($rootScope, $scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent, $modal) {
+.controller('ReceiveController', ['$rootScope', '$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent', '$modal', '$location',
+        function InfoController($rootScope, $scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent, $modal, $location) {
     if(!wallets.requireWallet($scope)) return;
     var base_payment_url = 'https://' + hostname + '/pay/' + $scope.wallet.receiving_id + '/';
     $scope.receive = {
@@ -17,7 +17,64 @@ angular.module('greenWalletReceiveControllers',
             }, function(err) {
                 notices.makeNotice('error', err.desc);
             }).finally(function() { $rootScope.is_loading -= 1; });
-        }
+        },
+        sweep: function() {
+            var that = this;
+            var key_wif = this.privkey_wif;
+            if (key_wif.indexOf('K') == 0 || key_wif.indexOf('L') == 0 || key_wif.indexOf('5') == 0) { // prodnet
+                // || encrypted_key.indexOf('c') == 0 || encrypted_key.indexOf('9') == 0) { // testnet - not supported
+                var key_bytes = B58.decode(key_wif);
+                if (key_bytes.length != 38 && key_bytes.length != 37) {
+                    notices.makeNotice(gettext('Not a valid private key'));
+                    return;
+                }
+                var expChecksum = key_bytes.slice(-4);
+                key_bytes = key_bytes.slice(0, -4);
+                var checksum = Crypto.SHA256(Crypto.SHA256(key_bytes, {asBytes: true}), {asBytes: true});
+                if (checksum[0] != expChecksum[0] || checksum[1] != expChecksum[1] || checksum[2] != expChecksum[2] || checksum[3] != expChecksum[3]) {
+                    notices.makeNotice(gettext('Not a valid private key'));
+                    return;
+                }
+                if (key_bytes.length == 34) {
+                    key_bytes = key_bytes.slice(1, -1);
+                    var compressed = true;
+                } else {
+                    key_bytes = key_bytes.slice(1);
+                    var compressed = false;
+                }
+            } else {
+                notices.makeNotice(gettext('Not a valid private key'));
+                return;
+            }
+            var key = new Bitcoin.ECKey(key_bytes);
+            if (compressed) {
+                var pubkey = key.getPubCompressed();
+            } else {
+                var pubkey = key.getPub()
+            }
+            that.sweeping = true;
+            tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social", pubkey, true).then(function(data) {
+                data.prev_outputs = [];
+                for (var i = 0; i < data.prevout_scripts.length; i++) {
+                    data.prev_outputs.push(
+                        {privkey: key, script: data.prevout_scripts[i]})
+                }
+                // TODO: verify
+                wallets.sign_and_send_tx(undefined, data, false, null, gettext('Funds swept')).then(function() {
+                    $location.url('/transactions/');
+                }).finally(function() {
+                    that.sweeping = false;
+                });
+            }, function(error) {
+                that.sweeping = false;
+                if (error.uri == 'http://greenaddressit.com/error#notenoughmoney') {
+                    notices.makeNotice('error', gettext('Already swept or no funds found'));
+                } else {
+                    notices.makeNotice('error', error.desc);
+                }
+            });
+        },
+        show_sweep: cur_coin_version == 0  // no testnet
     };
     var formatAmountBitcoin = function(amount) {
         var satoshi = Bitcoin.Util.parseValue(amount.toString()).divide(new BigInteger('1000'));

@@ -562,6 +562,7 @@ angular.module('greenWalletSettingsControllers',
         loaded: false,
         fbstate: {},
         redditstate: {},
+        customstate: {},
         toggle_fb: function() {
             var that = this;
             if (this.fbstate.enabled) {
@@ -628,11 +629,49 @@ angular.module('greenWalletSettingsControllers',
                     }
                 });
             }
+        },
+        toggle_custom: function() {
+            var that = this;
+            var change = (that.toggling_custom == 'changing');
+            if (this.customstate.enabled && !change) {
+                tx_sender.call('http://greenaddressit.com/addressbook/disable_sync', 'custom').then(function(data) {
+                    gaEvent('Wallet', 'CustomLoginDisabled');
+                    that.customstate.enabled = false;
+                    that.customstate.username = that.customstate.password = null;
+                    notices.makeNotice('success', gettext('Custom login disabled'));
+                }, function(err) {
+                    gaEvent('Wallet', 'CustomLoginDisableFailed', err.desc);
+                    that.toggling_custom = 'initial';
+                    notices.makeNotice('error', err.desc);
+                });
+            } else {
+                gaEvent('Wallet', 'CustomLoginEnableAttempt');
+                tx_sender.call('http://greenaddressit.com/addressbook/sync_custom', that.customstate.username,
+                        that.customstate.password).then(function() {
+                    gaEvent('Wallet', 'CustomLoginEnabled');
+                    if (that.customstate.enabled) {
+                        // change=true
+                        notices.makeNotice('success', gettext('Custom login changed'));
+                        $scope.thirdparty.toggling_custom = false;
+                    } else {
+                        notices.makeNotice('success', gettext('Custom login enabled'));
+                        that.customstate.enabled = true;
+                    }                    
+                }, function(err) {
+                    gaEvent('Wallet', 'CustomLoginEnableFailed');
+                    notices.makeNotice('error', err.desc);
+                    // go back to 1st step of toggling
+                    that.toggling_custom = 'initial';
+                });
+            }
         }
     };
     tx_sender.call('http://greenaddressit.com/addressbook/get_sync_status').then(function(data) {
         $scope.thirdparty.fbstate.enabled = data.fb;
         $scope.thirdparty.redditstate.enabled = data.reddit;
+        $scope.thirdparty.customstate.username = data.username;
+        $scope.thirdparty.customstate.enabled = data.username ? true : false;
+        $scope.thirdparty.customstate.save_button_label = data.username ? gettext('Change') : gettext('Save');
         $scope.thirdparty.loaded = true;
         $scope.$watch('thirdparty.fbstate.enabled', function(newValue, oldValue) {
             if (newValue === oldValue || $scope.thirdparty.toggling_fb === true) return;
@@ -653,6 +692,34 @@ angular.module('greenWalletSettingsControllers',
             $scope.thirdparty.redditstate.enabled = oldValue;
             $scope.thirdparty.toggling_reddit = true;
             $scope.thirdparty.toggle_reddit();
+        });
+        $scope.thirdparty.customstate.save = function() {
+            // step 2 - actually enable (disabling the inputs while server processes the request)
+            var was_enabled = $scope.thirdparty.customstate.enabled;
+            if (was_enabled) {
+                $scope.thirdparty.toggling_custom = 'changing';
+            } else {
+                $scope.thirdparty.toggling_custom = 'enabling';
+            }
+            $scope.thirdparty.toggle_custom();
+        };
+        $scope.$watch('thirdparty.customstate.enabled', function(newValue, oldValue) {
+            $scope.thirdparty.customstate.save_button_label = newValue ? gettext('Change') : gettext('Save');
+            if (newValue === oldValue || $scope.thirdparty.toggling_custom == 'initial') return;
+            if ($scope.thirdparty.toggling_custom == 'disabling' && newValue == true) return;
+            if ($scope.thirdparty.toggling_custom == 'disabling' || $scope.thirdparty.toggling_custom == 'enabling') {
+                $scope.thirdparty.toggling_custom = false;
+                return;
+            }
+            $scope.thirdparty.customstate.enabled = oldValue;
+            $scope.thirdparty.customstate.save_button_label = oldValue ? gettext('Change') : gettext('Save');
+            if (oldValue) { // disabling
+                $scope.thirdparty.toggling_custom = 'disabling';
+                $scope.thirdparty.toggle_custom();
+                return;
+            }
+            // step 1 - just show the inputs
+            $scope.thirdparty.toggling_custom = 'initial';
         });
     });
 }]);

@@ -46,7 +46,7 @@ angular.module('greenWalletTransactionsControllers',
         key = key.subkey(branches.EXTERNAL, true, true);
         key = key.subkey(transaction.pubkey_pointer, true, true);
         tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social",
-                key.public_key.getEncoded(true)).then(function(data) {
+                key.public_key.getEncoded(true), false).then(function(data) {
             data.prev_outputs = [];
             for (var i = 0; i < data.prevout_scripts.length; i++) {
                 data.prev_outputs.push(

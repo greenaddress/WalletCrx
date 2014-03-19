@@ -6098,6 +6098,16 @@ fieldset[disabled] .btn.btn-reddit.active {
   color: #707070;
   background-color: #ffffff;
 }
+.btn.btn-sync {
+  /* &:hover {
+      &:before {
+        background: red;
+        border-color: darken(red, 2%);
+        content: "\e014";
+        .scale(1.2);
+      }
+    } */
+}
 .btn.btn-sync:before {
   position: absolute;
   display: block;
@@ -6123,14 +6133,6 @@ fieldset[disabled] .btn.btn-reddit.active {
   content: "\e013";
   -webkit-transition: all 0.05s ease-out;
   transition: all 0.05s ease-out;
-}
-.btn.btn-sync:hover:before {
-  background: red;
-  border-color: #f50000;
-  content: "\e014";
-  -webkit-transform: scale(1.2, );
-  -ms-transform: scale(1.2, );
-  transform: scale(1.2, );
 }
 .currencies .btn.active {
   opacity: 1;

@@ -52,6 +52,20 @@
           </div>
         </div>
       </div>
+      <div ng-show="receive.show_sweep">
+        <hr>
+        <div class="form-group">
+          <label class="col-sm-2 control-label" for="id_privkey_wif">Private key in WIF format</label>
+          <div class="col-sm-10">
+            <div class="col-sm-10">
+              <input ng-model="receive.privkey_wif" class="form-control" type="text" id="id_privkey_wif" placeholder="Enter a private key to sweep here">
+            </div>
+            <div class="pull-right">
+              <a class="btn btn-default btn-block-xs" ng-class="{disabled: receive.sweeping}" ng-click="receive.sweep()">Sweep</a>
+            </div>
+          </div>
+        </div>
+      </div>
       <hr>
       <div class="pull-right">
             <a class="btn btn-default btn-block-xs" ng-click="receive.show_previous_addresses()"><i class="glyphicon glyphicon-time"></i> Show previously generated addresses</a>

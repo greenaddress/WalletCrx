@@ -20,7 +20,7 @@
                             placeholder="Mnemonic passphrase" ng-model=""
                             ng-class="{'has-error': state.mnemonic_error}" />
                         
-                        <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Invalid mnemonic: (( state.mnemonic_error ))</span
+                        <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Invalid mnemonic: (( state.mnemonic_error ))</span>
                     </div>
                     <hr>
                     <button type="submit" ng-disabled="is_loading || (state.seed_progress && !state.login_error)"

@@ -134,6 +134,24 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             });
         });
     };
+
+    $scope.login_with_custom = function() {
+        gaEvent('Login', 'CustomLogin');
+        $scope.got_username_password = function(username, password) {
+            wallets.loginWatchOnly($scope, 'custom', {username: username, password: password}).then(function() {
+                gaEvent('Login', 'CustomLoginSucceeded');
+                modal.close();
+            }).catch(function(e) {
+                gaEvent('Login', 'CustomLoginFailed', e.desc);
+                notices.makeNotice('error', e.desc);
+            });
+        };
+        var modal = $modal.open({
+            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_custom_login.html',
+            scope: $scope
+        });
+        
+    };
     
     $scope.read_qr_code = function read_qr_code() {
         gaEvent('Login', 'QrScanClicked');

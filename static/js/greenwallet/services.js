@@ -73,7 +73,7 @@ angular.module('greenWalletServices', [])
                 $scope.wallet.fiat_exchange = data.exchange;
                 $scope.wallet.receiving_id = data.receiving_id;
                 $scope.wallet.expired_deposits = data.expired_deposits;
-                $scope.wallet.nlocktime_locks = data.nlocktime_blocks;
+                $scope.wallet.nlocktime_blocks = data.nlocktime_blocks;
                 $scope.wallet.gait_path_seed = path_seed;
                 $scope.wallet.gait_path = mnemonics.seedToPath(path_seed);
                 if (data.gait_path !== $scope.wallet.gait_path) {

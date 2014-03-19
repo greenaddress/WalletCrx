@@ -14,12 +14,12 @@
                 <div class="title">Pay or get paid by social networks<br><small>Grant access to your wallet in watch-only mode</small></div>
                 <hr>
                 <div class="text-center">
-                    <button ng-click="signup.fblogin()" class="btn btn-facebook" ng-class="{'btn-sync':signup.fbloginstate.synchronized}"><i class="icon-facebook"></i> Facebook</button>
+                    <button ng-click="signup.fblogin()" class="btn btn-facebook" ng-class="{'btn-sync':signup.fbloginstate.synchronized}" ng-disabled="signup.fbloginstate.synchronized"><i class="icon-facebook"></i> Facebook</button>
                     
-                    <button ng-click="signup.redditlogin()" class="btn btn-reddit" ng-class="{'btn-sync':signup.redditloginstate.synchronized}"><i class="icon-reddit"></i> Reddit</button>
+                    <button ng-click="signup.redditlogin()" class="btn btn-reddit" ng-class="{'btn-sync':signup.redditloginstate.synchronized}" ng-disabled="signup.redditloginstate.synchronized"><i class="icon-reddit"></i> Reddit</button>
                     
+                    <button ng-click="signup.customlogin()" class="btn btn-default" ng-class="{'btn-sync':signup.customloginstate.synchronized}" ng-disabled="signup.customloginstate.synchronized"><i class="glyphicon glyphicon-lock"></i> Custom Login</button>
                     <button class="btn btn-twitter" disabled><i class="icon-twitter"></i> Twitter<span class="coming-soon">Coming soon</span></button>
-                    <button class="btn btn-default" disabled><i class="glyphicon glyphicon-lock"></i> Custom Login<span class="coming-soon">Coming soon</span></button>
                     
                     <ul ng-show="signup.facebook_contacts">
                         <li ng-repeat="contact in signup.facebook_contacts">
