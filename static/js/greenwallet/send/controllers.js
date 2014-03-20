@@ -260,9 +260,13 @@ angular.module('greenWalletSendControllers',
                 notices.makeNotice('error', error.desc);
             });
         },
+        amount_to_satoshis: function(amount) {
+            var div = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
+            return Bitcoin.Util.parseValue(amount).divide(BigInteger.valueOf(div)).toString();
+        },
         send_social: function(do_send) {
             var that = this;
-            var satoshis = Bitcoin.Util.parseValue(this.amount).divide(BigInteger.valueOf(1000)).toString();
+            var satoshis = that.amount_to_satoshis(this.amount);
             if (this.recipient.has_wallet) {
                 this._send_social_ga(satoshis);
                 return;
@@ -384,9 +388,9 @@ angular.module('greenWalletSendControllers',
             });
         },
         send_address: function() {
-            var satoshis = Bitcoin.Util.parseValue(this.amount).divide(BigInteger.valueOf(1000)).toString();
             var to_addr = this.recipient.constructor === String ? this.recipient : this.recipient.address;
             var that = this;
+            var satoshis = that.amount_to_satoshis(that.amount);
             $rootScope.is_loading += 1;
             tx_sender.call("http://greenaddressit.com/vault/prepare_tx", satoshis, to_addr, this.add_fee, null).then(function(data) {
                 return verify_tx(that, data.tx, to_addr, satoshis, data.change_pointer).then(function() {
@@ -405,7 +409,7 @@ angular.module('greenWalletSendControllers',
             tx_sender.call("http://greenaddressit.com/addressbook/reddit_user_has_wallet", this.recipient.address.replace('reddit:', '')).then(function(has_wallet) {
                 that.recipient.address = that.recipient.address.replace('reddit:', '');
                 if (has_wallet) {
-                    var satoshis = Bitcoin.Util.parseValue(that.amount).divide(BigInteger.valueOf(1000)).toString();
+                    var satoshis = that.amount_to_satoshis(that.amount);
                     that._send_social_ga(satoshis);
                 } else {
                     that.send_social(that.do_send_reddit);
@@ -468,8 +472,9 @@ angular.module('greenWalletSendControllers',
         }
     };
     if ($scope.send_tx.recipient && $scope.send_tx.recipient.amount) {
+        var mul = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
         $scope.send_tx.amount = Bitcoin.Util.formatValue(
-            new BigInteger($scope.send_tx.recipient.amount.toString()).multiply(BigInteger.valueOf(1000)));
+            new BigInteger($scope.send_tx.recipient.amount.toString()).multiply(BigInteger.valueOf(mul)));
         $scope.send_tx.add_fee = 'sender';
     }
     wallets.addCurrencyConversion($scope, 'send_tx');
