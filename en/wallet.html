@@ -75,6 +75,7 @@
 <script type="text/javascript" src="/static/js/gettext.js"></script>
 
 
+    <script src="/en/i18n_catalog.js"></script>
     
     
     
@@ -116,9 +117,7 @@
     <li path="/address-book"><a href="#/address-book">Address Book</a></li>
     <li ng-show="wallet.hdwallet.secret_exponent_bytes" path="/settings" class="menu-settings"><a href="#/settings">Settings</a></li>
     <li><a href="" ng-click="update_now()" ng-show="update_available">Update now</a></li>
-    
     <li><a href="" ng-click="logout()">Logout</a></li>
-    
     <li class="menu-balance visible-xs"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) / ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
     <li class="menu-balance visible-sm"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) / ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
   </ul>

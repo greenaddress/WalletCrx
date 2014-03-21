@@ -274,7 +274,7 @@ angular.module('greenWalletServices', [])
                 } else {
                     negative = value.compareTo(new BigInteger('0')) < 0;
                     var addresses = [];
-                    var description = 'Sent to ';
+                    var description = gettext('Sent to ');
                     for (var j = 0; j < tx.eps.length; j++) {
                         var ep = tx.eps[j];
                         if (ep.is_credit && (!ep.is_relevant || ep.social_destination)) {
@@ -518,6 +518,13 @@ angular.module('greenWalletServices', [])
         } else {  // already logged in
             return do_create();
         }
+    };
+    walletsService.askForLogout = function($scope, text) {
+        $scope.ask_for_logout_text = text;
+        return $modal.open({
+            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_logout.html',
+            scope: $scope
+        }).result;
     };
     return walletsService;
 }]).factory('notices', ['$rootScope', '$timeout', function($rootScope, $timeout) {

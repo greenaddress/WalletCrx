@@ -263,6 +263,7 @@ angular.module('greenWalletSettingsControllers',
         unit: $scope.wallet.unit,
         exchange: $scope.wallet.fiat_exchange,
         notifications: angular.copy($scope.wallet.appearance.notifications_settings || {}),
+        language: LANG,
         updating_display_fiat: false,
         nlocktime: {
             blocks: $scope.wallet.nlocktime_blocks,
@@ -314,6 +315,22 @@ angular.module('greenWalletSettingsControllers',
     if (!settings.currency) {
         $scope.$on('first_balance_updated', function() { settings.currency = $scope.wallet.fiat_currency; })
     }
+    var ignoreLangChange = false;
+    $scope.$watch('settings.language', function(newValue, oldValue) {
+        if (newValue == oldValue) return;
+        if (ignoreLangChange) { ignoreLangChange = false; return; }
+        settings.language = oldValue;
+        ignoreLangChange = true;  // don't ask for logout on change back to previous lang
+        var is_chrome_app = window.chrome && chrome.storage;
+        wallets.askForLogout($scope, gettext('You need to log out for language changes to be applied.')).then(function() {
+            if (is_chrome_app) {
+                storage.set('language', newValue);
+                chrome.runtime.sendMessage({changeLang: true, lang: newValue});
+            } else {
+                window.location.href = '/'+newValue+'/wallet';
+            }
+        });
+    });
     $scope.$watch('settings.currency', function(newValue, oldValue) {
         if (oldValue !== newValue && !settings.updating_currency && newValue != $scope.wallet.fiat_currency) {
             settings.currency = oldValue;

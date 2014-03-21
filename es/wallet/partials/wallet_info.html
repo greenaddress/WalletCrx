@@ -1,0 +1,52 @@
+<div class="row hidden-xs hidden-sm">
+  <div class="col-md-12">
+    <div class="header">
+      Balance<span class="balance pull-right" ng-include="'/'+LANG+'/wallet/partials/wallet_balance.html'"></span>
+    </div>
+  </div>
+</div>
+<div class="row" ng-show="wallet.has_graph">
+  <div class="col-md-12">
+    <div class="sub-header">
+      (( wallet.unit ))
+      <!-- <span class="header-options">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="">Año</a></li>
+          <li><a href="">Mes</a></li>
+          <li><a href="">Semana</a></li>
+        </ul>
+      </span> -->
+    </div>
+    <div id="btc_graph" class="graph"></div>
+  </div>
+  <!-- <div class="col-md-6">
+    <div class="sub-header">
+      EUR
+      <span class="header-options">
+        <ul class="nav nav-pills pull-right">
+          <li class="active"><a href="">Año</a></li>
+          <li><a href="">Mes</a></li>
+          <li><a href="">Semana</a></li>
+        </ul>
+      </span>
+    </div>
+    <div class="graph"><img class="img-responsive" src="/static/img/pages/index/preview.png"></div>
+  </div> -->
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <!--
+    <div>((wallet.n_tx))</div>
+    <div>((wallet.final_balance|format_btc:wallet.unit))</div>
+    <ul>
+    <li>Dirección principal: (( wallet.hdwallet.getBitcoinAddress().toString() ))</li>
+    <li ng-hide="wallet.p2sh"><a href="" ng-click="fund()">Fondo</a></li>
+    <li ng-show="wallet.p2sh">P2SH: ((wallet.p2sh))</li>
+    <li>Clave mnemonica: (( wallet.mnemonic ))</li>
+    <div id="my-primary-addres-qr-code"></div>
+    </ul>
+    -->
+    <div class="sub-header">Sus últimas transacciones</div>
+    <div ng-include="'/'+LANG+'/wallet/partials/wallet_transactions_table.html'"></div>
+  </div>
+</div>

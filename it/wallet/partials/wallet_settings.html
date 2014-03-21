@@ -1,0 +1,301 @@
+  <div class="row hidden-xs hidden-sm">
+  <div class="col-md-12">
+    <div class="header">
+      Configurazione
+      <form role="form" class="form-inline pull-right" style="margin:0;">
+        <div class="form-group">
+          Cambia la lingua a
+        </div>
+        <div class="form-group">
+          <select ng-model="settings.language">
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pl">Polski</option>
+          </select>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="row currencies" ng-show="settings.available_currencies">
+  <div class="col-md-3">
+    <div class="sub-header">Moneta</div>
+    <div class="sub-header-desc">Seleziona la tua moneta e la fonte per il cambio</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline">
+      <div class="form-group">
+        <label class="control-label">Fonte per il cambio</label>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button ng-repeat="(exchange, available) in settings.available_currencies.per_exchange" type="button" class="btn btn-xs btn-default" ng-class="{'btn-primary': settings.exchange == exchange, 'btn-default': settings.exchange != exchange}" ng-model="settings.exchange" btn-radio="exchange" ng-disabled="settings.updating_exchange || available.indexOf(settings.currency) == -1">(( exchanges[exchange] ))</button>
+        </div>
+      </div>
+    </form>
+    <hr>
+    <form role="form" class="form-inline">
+      <div class="form-group">
+        <label class="control-label">Visualizza ammontare in</label>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button ng-repeat="currency in settings.available_currencies.all" type="button" class="btn btn-xs" ng-class="{'btn-primary': settings.currency == currency, 'btn-default': settings.currency != currency}" ng-model="settings.currency" btn-radio="currency" ng-disabled="settings.updating_currency || settings.available_currencies.per_exchange[settings.exchange].indexOf(currency) == -1">(( currency ))</button>
+        </div>
+      </div>
+      <br />
+      <div class="form-group">
+        <label class="control-label">e</label>
+      </div>
+      <div class="form-group">
+        <div class="btn-group">
+          <button ng-repeat="unit in settings.available_units" type="button" class="btn btn-xs" ng-class="{'btn-primary': settings.unit == unit, 'btn-default': settings.unit != unit}" ng-model="settings.unit" btn-radio="unit" ng-disabled="settings.updating_unit">(( unit ))</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Notifiche</div>
+    <div class="sub-header-desc">Le notifiche offrono una sicurezza migliorata se configurate per i movimenti in uscita e aggiornamenti istantanei quando configurate per i movimenti in entrata</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline">
+    <div ng-class="{grayedout: !wallet.twofac_email_confirmed}">
+      <div class="form-group">
+        <label class="control-label">Manda notifica di transazioni in entrata via</label>
+      </div>
+      <div class="form-group">
+        <label class="switch">
+          <input type="checkbox" class="switch" ng-model="settings.notifications.email_incoming" ng-disabled="settings.updating_ntf_email_incoming || !wallet.twofac_email_confirmed">
+          <span class="switch"></span>
+          email
+        </label>
+      </div><!--
+      <div class="form-group">
+        <label class="switch">
+          <input type="checkbox" class="switch">
+          <span class="switch"></span>
+          SMS
+        </label>
+      </div> -->
+    </div>
+      <hr>
+    <div ng-class="{grayedout: !wallet.twofac_email_confirmed}">
+        <div class="form-group">
+          <label class="control-label">Manda notifica di transazioni in uscita via</label>
+        </div>
+        <div class="form-group">
+          <label class="switch">
+              <input type="checkbox" class="switch" ng-model="settings.notifications.email_outgoing" ng-disabled="settings.updating_ntf_email_outgoing || !wallet.twofac_email_confirmed">
+              <span class="switch"></span>
+              email
+          </label>
+        </div><!--
+        <div class="form-group">
+          <label class="switch">
+            <input type="checkbox" class="switch">
+            <span class="switch"></span>
+            SMS
+          </label>
+        </div> -->
+      </div>
+      <div ng-hide="wallet.twofac_email_confirmed">
+        <hr>
+        <small class="text-info"><strong>NOTA</strong>: Hai bisogno di aver abilitato l'autenticazione a due fattori via email per usare questa feature.</small>
+      </div>
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Autentificazione a due fattori</div>
+    <div class="sub-header-desc">Imposta uno o tutte le autenticazioni a due fattori: potrai scegliere quale usare!</div>
+  </div>
+  <div class="col-md-9">
+    <div ng-controller="TwoFactorSetupController" ng-include="'/it/wallet/partials/wallet_2fa.html'"></div>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Limiti di spesa</div>
+    <div class="sub-header-desc">Configura un limite sotto il quale non ti verrà richiesta l'autenticazioine a due fattori per pagamenti super veloci</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-horizontal">
+      <label class="switch">
+          <input type="checkbox" class="switch" disabled>
+          <span class="switch"></span>
+          <span>
+            Abilita pagamenti ritardati
+            <span class="coming-soon">Disponibile a breve</span>
+          </span>
+      </label>
+      <!--
+      <hr>
+      <div class="form-group">
+        <label for="single" class="col-sm-3 control-label">Single transaction</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="single" placeholder="Ammontare">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="daily" class="col-sm-3 control-label">Daily</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="daily" placeholder="Ammontare">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="monthly" class="col-sm-3 control-label">Monthly</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" id="monthly" placeholder="Ammontare">
+        </div>
+      </div>
+      -->
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Pagamenti ritardati</div>
+    <div class="sub-header-desc">Ritarda le transazioni per stare tranquillo: funziona al meglio con la notifica dei movimenti in uscita.</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-horizontal">
+      <label class="switch">
+          <input type="checkbox" class="switch" disabled>
+          <span class="switch"></span>
+          <span>
+            Abilita pagamenti ritardati
+            <span class="coming-soon">Disponibile a breve</span>
+          </span>
+      </label>
+      <!--
+      <hr>
+      <div class="form-group">
+        <label class="control-label col-sm-3">Ritarda il pagamento di</label>
+        <div class="col-sm-4">
+          <input type="text" class="form-control" placeholder="Ammontare">
+        </div>
+        <div class="col-sm-4">
+          <select class="form-control">
+            <option value="">Seconds</option>
+            <option value="">Minutes</option>
+          </select>
+        </div>
+      </div>
+      -->
+    </form>
+  </div>
+</div>
+<hr class="double" ng-show="!settings.noLocalStorage">
+<div ng-controller="QuickLoginController" class="row" ng-show="!settings.noLocalStorage">
+  <div class="col-md-3">
+    <div class="sub-header">Accesso veloce</div>
+    <div class="sub-header-desc">Per avere un accesso sicuro ma veloce da questo dispositivo configura il PIN</div>
+  </div>
+  <div class="col-md-9">
+    <div ng-show="quicklogin.loaded">
+      <form ng-submit="set_new_pin()" class="form-horizontal" role="form">
+        <label class="switch">
+          <input type="checkbox" class="switch" ng-model="quicklogin.enabled" ng-disabled="quicklogin.started_setting_pin">
+          <span class="switch"></span>
+            Abilita l'accesso rapido su questo dispositivo
+        </label>
+        <hr ng-show="quicklogin.started_setting_pin || quicklogin.enabled">
+        <div class="form-group" ng-show="quicklogin.started_setting_pin || quicklogin.enabled">
+          <label ng-show="quicklogin.enabled" class="control-label col-sm-3">Cambia PIN</label>
+          <label ng-hide="quicklogin.enabled" class="control-label col-sm-3">Imposta PIN</label>
+          <div class="col-sm-4">
+            <input type="tel" class="form-control" placeholder="Quattro numeri"
+                   maxlength="4" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" ng-model="quicklogin.new_pin">
+            <input type="submit" class="btn btn-primary" ng-show="quicklogin.new_pin" value="Conferma" ng-disabled="quicklogin.setting_pin" />
+          </div>
+        </div>
+        <hr>
+        <button class="btn btn-danger btn-block-xs" ng-click="remove_all_pin_logins()">Disabilita l'accesso rapido da tutti i devices</button>
+        <!-- 
+        <div class="form-group">
+          <select id="quick-login-select" ng-model="quicklogin.selected_device" ng-options="device.device_name for device in quicklogin.devices"></select>
+          <label for="pin" class="col-sm-3 control-label">imposta PIN a</label>
+          <div class="col-sm-4">
+            <input id="pin" class="form-control" style="width:120px;" placeholder="codice PIN" type="tel" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" maxlength="4" ng-model="quicklogin.new_pin" />
+          </div>
+          <div class="col-sm-4">
+            <a href="" ng-click="remove_pin()" class="noanimate btn btn-danger" ng-class="{disabled: quicklogin.removing_pin}" ng-hide="quicklogin.selected_device.is_current && quicklogin.new_pin">Rimuovi</a>
+            <input type="submit" class="btn btn-primary" ng-show="quicklogin.selected_device.is_current && quicklogin.new_pin" value="Conferma" ng-disabled="quicklogin.setting_pin" />
+          </div>
+        </div>
+        -->
+      </form>
+    </div>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Collega account di terze parti</div>
+    <div class="sub-header-desc">Permette pagamenti social e accesso in modalità watch only attraverso login di altri servizi</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController" ng-submit="thirdparty.customstate.save()">
+    
+      <button class="btn btn-block-xs btn-default" ng-click="thirdparty.customstate.enabled=!thirdparty.customstate.enabled" ng-disabled="thirdparty.toggling_custom"><i class="glyphicon glyphicon-lock"></i> Login custom</button>
+      <label class="switch">
+        <input type="checkbox" class="switch" ng-model="thirdparty.customstate.enabled" ng-disabled="thirdparty.toggling_custom">
+        <span class="switch"></span>
+      </label>
+      <div ng-hide="!thirdparty.customstate.enabled && !thirdparty.toggling_custom && !thirdparty.customstate.username">
+        <input class="form-control" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" type="text" ng-model="thirdparty.customstate.username" placeholder="Nome utente" />
+        <input class="form-control" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" type="password" ng-model="thirdparty.customstate.password" placeholder="Password" />
+        <input type="submit" class="btn btn-sm btn-default" value="(( thirdparty.customstate.save_button_label ))" ng-show="thirdparty.customstate.username && thirdparty.customstate.password" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" ng-click="thirdparty.customstate.save()" />
+      </div>
+    
+    </form>
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">Mnemonica</div>
+    <div class="sub-header-desc">Mostra la tua passphrase per recuperare o clonare il wallet su un altro dispositivo.</div>
+  </div>
+  <div class="col-md-9">
+    <button class="btn btn-warning btn-block-xs" ng-click="show_mnemonic()">Mnemonica</button>
+    
+  </div>
+</div>
+<hr class="double">
+<div class="row">
+  <div class="col-md-3">
+    <div class="sub-header">nLockTime</div>
+    <div class="sub-header-desc">Le transazioni nLockTime permettono di recuperare i tuoi fondi dopo un numero predefinito di blocchi</div>
+  </div>
+  <div class="col-md-9">
+    <form role="form" class="form-inline" ng-submit="settings.nlocktime.update()">
+      <div class="form-group">
+        <div ng-class="{grayedout: !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac_email_confirmed}">
+          <label for="id_nlocktime_blocks" class="control-label">Permetti di ottenere i fondi senza la firma di GreenAddress.it dopo</label>
+          <input class="form-control" type="tel" ng-model="settings.nlocktime.blocks_new" ng-disabled="settings.nlocktime.updating_nlocktime_blocks || !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac_email_confirmed" />
+          blocchi
+          <input type="submit" class="btn btn-sm btn-default" value="Save" ng-show="settings.nlocktime.blocks_new != settings.nlocktime.blocks" ng-disabled="settings.nlocktime.updating_nlocktime_blocks"  />
+          <br />(( settings.nlocktime.blocks_userfriendly ))
+        </div>
+        <div ng-hide="settings.notifications.email_incoming && settings.notifications.email_outgoing && wallet.twofac_email_confirmed">
+          <hr>
+          <small class="text-info"><strong>NOTA</strong>: Sia le notifiche per i momvimenti in uscita che per quelli in entrata devono essere abilitati per usare questa fetaure.</small>
+        </div>
+        <hr>
+        <a href="" class="btn btn-default btn-block-xs" ng-click="settings.expiring_soon_modal()"><i class="glyphicon glyphicon-time"></i> Mostra gli output in scadenza a breve</a>
+      </div>
+    </form>
+  </div>
+</div>

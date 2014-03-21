@@ -1,7 +1,22 @@
   <div class="row hidden-xs hidden-sm">
   <div class="col-md-12">
     <div class="header">
-      Settings<span class="balance pull-right" ng-include="'/'+LANG+'/wallet/partials/wallet_balance.html'"></span>
+      Settings
+      <form role="form" class="form-inline pull-right" style="margin:0;">
+        <div class="form-group">
+          Change language to
+        </div>
+        <div class="form-group">
+          <select ng-model="settings.language">
+            <option value="de">Deutsch</option>
+            <option value="en">English</option>
+            <option value="es">Español</option>
+            <option value="fr">Français</option>
+            <option value="it">Italiano</option>
+            <option value="pl">Polski</option>
+          </select>
+        </div>
+      </form>
     </div>
   </div>
 </div>
@@ -227,8 +242,8 @@
 <hr class="double">
 <div class="row">
   <div class="col-md-3">
-    <div class="sub-header">Link third party accounts</div>
-    <div class="sub-header-desc">Allow social payments and watch-only login to your wallet via third party accounts.</div>
+    <div class="sub-header">Link your own third party accounts</div>
+    <div class="sub-header-desc">Allow social payments and watch-only login to your wallet via your own third party accounts.</div>
   </div>
   <div class="col-md-9">
     <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController" ng-submit="thirdparty.customstate.save()">

@@ -8,13 +8,17 @@ angular.module('greenWalletControllers', [])
         });
     });
     $scope.update_now = function() {
-       window.applicationCache.swapCache();
-       window.location.reload();
+        wallets.askForLogout(gettext('You need to log out to update cache.'), $scope).then(function() {
+            window.applicationCache.swapCache();
+            window.location.reload();
+        });
     };
     $scope.logout = function() {
-        clearwallet();
-        tx_sender.logout();
-        $location.path('/');
+        wallets.askForLogout($scope).then(function() {
+            clearwallet();
+            tx_sender.logout();
+            $location.path('/');
+        });
     };
     var updating = true;
     var clearwallet = function() {

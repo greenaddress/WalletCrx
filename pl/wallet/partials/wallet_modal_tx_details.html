@@ -1,0 +1,39 @@
+<div class="modal-header">
+    <h3>Szczegóły transakcji</h3>
+</div>
+
+<div class="modal-body">
+    <ul>
+        <li>Data i godzina: (( selected_transaction.ts ))</li>
+        <li>Hash: (( selected_transaction.txhash ))</li>
+        <li>Opłata: (( selected_transaction.fee | format_btc:wallet.unit ))</li>
+    </ul>
+
+    <h4>Wejścia</h4>
+    <table class="table">
+        <tr><th>Adres</th><th>Kwota</th></tr>
+        <tr ng-repeat="input in selected_transaction.inputs">
+            <td>(( input.ad ))</td>
+            <td>(( input.value | format_btc:wallet.unit ))</td>
+        </tr>
+    </table>
+
+    <h4>Wyjścia</h4>
+    <table class="table">
+        <tr><th>Adres</th><th>Kwota</th></tr>
+        <tr ng-repeat="output in selected_transaction.outputs">
+            <td>(( output.ad ))<br />
+
+            <a ng-hide="output.nlocktime_json || output.is_spent || !output.is_relevant" href="" ng-click="generate_nlocktime(selected_transaction, output)">utwórz nLockTime</a>
+            <p style="word-wrap: break-word; width: 400px;" ng-show="output.nlocktime_json">nLockTime: (( output.nlocktime_json ))</p>
+            </td>
+            <td>(( output.value | format_btc:wallet.unit ))</td>
+        </tr>
+    </table>
+</div>
+
+<div class="modal-footer">
+    <div class="">
+        <button class="btn btn-primary" ng-click="$dismiss()">Zamknij</button>
+    </div>
+</div>
