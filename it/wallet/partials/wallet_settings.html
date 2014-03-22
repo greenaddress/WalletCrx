@@ -22,7 +22,7 @@
 </div>
 <div class="row currencies" ng-show="settings.available_currencies">
   <div class="col-md-3">
-    <div class="sub-header">Moneta</div>
+    <div class="sub-header">Valuta</div>
     <div class="sub-header-desc">Seleziona la tua moneta e la fonte per il cambio</div>
   </div>
   <div class="col-md-9">
@@ -68,7 +68,7 @@
     <form role="form" class="form-inline">
     <div ng-class="{grayedout: !wallet.twofac_email_confirmed}">
       <div class="form-group">
-        <label class="control-label">Manda notifica di transazioni in entrata via</label>
+        <label class="control-label">Manda notifica di transazioni in ingresso via</label>
       </div>
       <div class="form-group">
         <label class="switch">
@@ -107,7 +107,7 @@
       </div>
       <div ng-hide="wallet.twofac_email_confirmed">
         <hr>
-        <small class="text-info"><strong>NOTA</strong>: Hai bisogno di aver abilitato l'autenticazione a due fattori via email per usare questa feature.</small>
+        <small class="text-info"><strong>NOTA</strong>: Hai bisogno di aver abilitato l'autenticazione a due fattori via email per usare questa funzionalità.</small>
       </div>
     </form>
   </div>
@@ -243,7 +243,7 @@
 <div class="row">
   <div class="col-md-3">
     <div class="sub-header">Collega account di terze parti</div>
-    <div class="sub-header-desc">Permette pagamenti social e accesso in modalità watch only attraverso login di altri servizi</div>
+    <div class="sub-header-desc">Permette pagamenti social e accesso in modalità a sola lettura attraverso login di altri servizi</div>
   </div>
   <div class="col-md-9">
     <form role="form" ng-show="thirdparty.loaded" ng-controller="ThirdPartyController" ng-submit="thirdparty.customstate.save()">

@@ -33,7 +33,7 @@
                             class="btn login-submit" ng-class="{'btn-primary': !state.login_error, 'btn-danger': state.login_error}"
                             href="#" id="restore-wallet-continue">
                         <span ng-hide="state.seed_progress || state.login_error">Per piacere accedi per usare il tuo portafogli</span>
-                        <span ng-show="state.seed_progress && !state.login_error">Sto lavorando ... ... (( state.seed_progress ))%</span>
+                        <span ng-show="state.seed_progress && !state.login_error">Sto lavorando... ... (( state.seed_progress ))%</span>
                         <span ng-show="state.login_error">Errore, riprovare</span>
                     </button>
                 </form>

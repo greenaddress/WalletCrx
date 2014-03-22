@@ -5,19 +5,21 @@
     <div class="modal-body">
         <p>You must provide 2 factor authentication code to perform this action</p>
         <form class="form-horizontal" ng-submit="$close({code: twofac.twofactor_code, method: twofac.twofactor_method, gauth_code: twofac.gauth_code})"><div class="control-group">
-            <p>
+            <div ng-hide="twofac.codes_requested[twofac.twofactor_method] || twofac.gauth_only">
                 <p>Please select authentication method: <br/>
                 <label clickfix ng-repeat="method in twofactor_methods">
-                    <input clickfix type="radio" name="twofactor_method" ng-model="twofac.twofactor_method" ng-value="method">
+                    <input clickfix type="radio" name="twofactor_method" ng-model="twofac.twofactor_method" ng-disabled="twofac.requesting_code" ng-value="method">
                     (( twofactor_method_names[method] ))<br/>
                 </label>
-            </p>
+            </div>
+            <p ng-show="twofac.codes_requested[twofac.twofactor_method]">Please enter your (( twofactor_method_names[twofac.twofactor_method] )) authentication code which we have just sent to you.<span ng-show="twofac_modal_gauth"> Then enter the Google Authenticator code into the second field and click OK. </span></p>
+            
             <div class="form-inline" ng-show="twofac.twofactor_method == 'gauth' || twofac.codes_requested[twofac.twofactor_method]">
-                <p>Please enter the code here:
+                <p>Please enter the  (( twofactor_method_names[twofac.twofactor_method] ))  code:
                 <input clickfix focus-on="twoFactorModal" class="form-control pin" type="tel" mask-input required="required"
                    maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" ng-model="twofac.twofactor_code" /></p>
                 <div ng-if="twofac_modal_gauth">
-                    <p>Please enter your Google Authenticator code:
+                    <p>Please enter the Google Authenticator code:
                     <input clickfix class="form-control pin" type="tel" mask-input required="required"
                        maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" ng-model="twofac.gauth_code" /></p>
                 </div>

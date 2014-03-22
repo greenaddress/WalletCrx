@@ -5,12 +5,12 @@
     <p>Iniciando lector de dispositivo NFC...</p>
 </div>
 <div class="modal-body text-center" ng-show="(( nfc_init_succeeded == 3 ))">
-    <p>Por favor mantenga su dispositivo cerca del lector para escribir su Wallet!</p>
+    <p>Por favor mantenga tu dispositivo cerca del lector para escribir tu Wallet!</p>
     <p>Dispositivos escritos: (( num_tags_written ))</p>
     <p>Dispositivos formateados: (( num_tags_formatted ))</p>
 </div>
 <div class="modal-body text-center" ng-show="(( nfc_init_error ))">
-    <p>Su NFC no esta habilitado o no se encuentra disponible. Si esta disponible, por favor habilitelo en la configuración</p>
+    <p>Tu NFC no esta habilitado o no se encuentra disponible. Si esta disponible, por favor habilitelo en la configuración</p>
 </div>
 <div class="modal-footer">
   <button type="button" class="btn btn-primary" ng-click="$close()">Cerrar</button>

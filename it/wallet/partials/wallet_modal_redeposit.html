@@ -3,10 +3,10 @@
     
     	<p><a href="" ng-click="redeposit_single_tx()">
     		Rideposita una singola transazione (più economico)</a><br />
-    		fee stimata: (( redeposit_estimated_fees.single_tx|format_btc:wallet.unit ))</p>
+    		commissioni stimate: (( redeposit_estimated_fees.single_tx|format_btc:wallet.unit ))</p>
     	<p><a href="" ng-click="redeposit_multiple_tx()">
     		Rideposita come singola transazione per output (privacy migliore)</a><br />
-    		fee stimata: (( redeposit_estimated_fees.multiple_tx|format_btc:wallet.unit ))
+    		commissioni stimate: (( redeposit_estimated_fees.multiple_tx|format_btc:wallet.unit ))
     		(<span>(( wallet.expired_deposits.length ))</span> transazioni)</p>
     </ul>
 </div>

@@ -384,7 +384,8 @@ angular.module('greenWalletServices', [])
         }
         return d.promise;
     };
-    walletsService.get_two_factor_code = function($scope, gauth) {
+    walletsService.get_two_factor_code = function($scope, gauth, ignore) {
+        if (ignore) return $q.when(null);  // used in signup to allow setting 2FA without 2FA
         var deferred = $q.defer();
         walletsService.getTwoFacConfig($scope).then(function(twofac_data) {
             if (twofac_data.any) {
@@ -408,7 +409,7 @@ angular.module('greenWalletServices', [])
                     request_code: function() {
                         var that = this;
                         this.requesting_code = true;
-                        tx_sender.call('http://greenaddressit.com/twofactor/request_' + this.twofactor_method).then(function() {
+                        return tx_sender.call('http://greenaddressit.com/twofactor/request_' + this.twofactor_method).then(function() {
                             that.codes_requested[that.twofactor_method] = true;
                             this.requesting_code = false;
                         }, function(err) {
@@ -417,13 +418,32 @@ angular.module('greenWalletServices', [])
                         });
                     }};
                 $scope.twofac_modal_gauth = gauth;
-                var modal = $modal.open({
-                    templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_2fa.html',
-                    scope: $scope,
-                    windowClass: 'twofactor'
-                });
-                modal.opened.then(function() { focus("twoFactorModal"); });
-                deferred.resolve(modal.result);
+                var show_modal = function() {
+                    var modal = $modal.open({
+                        templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_2fa.html',
+                        scope: $scope,
+                        windowClass: 'twofactor'
+                    });
+                    modal.opened.then(function() { focus("twoFactorModal"); });
+                    deferred.resolve(modal.result);
+                };
+                if ($scope.twofactor_methods.length == 1) {
+                    if ($scope.twofactor_methods[0] == 'gauth') {
+                        // just gauth - no request required
+                        $scope.twofac.gauth_only = true;  // don't display the radio buttons
+                                                          // (not required in 'else' because codes_requested takes care of it)
+                        show_modal();
+                    } else {
+                        // just sth else than gauth - request it because user can't choose anything else anyway
+                        $scope.twofac.twofactor_method = $scope.twofactor_methods[0];
+                        $scope.twofac.request_code().then(function() {
+                            show_modal();
+                        })
+                    }
+                } else {
+                    // more than one auth method available - allow the user to select
+                    show_modal();
+                }
             } else {
                 return deferred.resolve(null);
             }
@@ -693,10 +713,10 @@ angular.module('greenWalletServices', [])
         txSenderService.watch_only = undefined;
     };
     txSenderService.loginWatchOnly = function(token_type, token, logout) {
-        txSenderService.watch_only = [token_type, token];
         var d = $q.defer();
         txSenderService.call('http://greenaddressit.com/login/watch_only',
             token_type, token, logout||false).then(function(data) {
+                txSenderService.watch_only = [token_type, token];
                 d.resolve(data);
             }, function(err) {
                 d.reject(err);

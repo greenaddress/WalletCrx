@@ -15,7 +15,7 @@
                     
                 </div>
                 <hr>
-                <div class="subtitle">Iniciar sesión de acceso completo a su Wallet</div>
+                <div class="subtitle">Iniciar sesión de acceso completo a tu Wallet</div>
                 <form class="form-inline" ng-submit="login()" ng-class="{'has-error': state.mnemonic_error}">
                     <div class="control-group" ng-class="{'has-error': state.error && form.$invalid}">
                         <input ng-show="state.has_pin" class="form-control pin login-input-1" type="tel" mask-input name="pin"
@@ -32,7 +32,7 @@
                     <button type="submit" ng-disabled="is_loading || (state.seed_progress && !state.login_error)"
                             class="btn login-submit" ng-class="{'btn-primary': !state.login_error, 'btn-danger': state.login_error}"
                             href="#" id="restore-wallet-continue">
-                        <span ng-hide="state.seed_progress || state.login_error">Iniciar sesión para acceder a su Wallet</span>
+                        <span ng-hide="state.seed_progress || state.login_error">Iniciar sesión para acceder a tu Wallet</span>
                         <span ng-show="state.seed_progress && !state.login_error">Procesando ... (( state.seed_progress ))%</span>
                         <span ng-show="state.login_error">Error, intente nuevamente</span>
                     </button>

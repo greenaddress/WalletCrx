@@ -1,9 +1,9 @@
 <!doctype html>
 <html style="overflow-y: scroll;" toggleable-menu ng-swipe-left="toggle_set(false)" ng-swipe-right="toggle_set(true)" ng-app="greenWalletApp" lang="it"  ng-csp>
   <head>
-    <title>portafogli | GreenAddress.it</title>
+    <title>portafoglio | GreenAddress.it</title>
     <meta charset="utf-8">
-    <meta name="description" content="Il più sicuro wallet Bitcoin che lascia a te pieno controllo">
+    <meta name="description" content="Il più sicuro wallet Bitcoin che ti lascia in controllo completo">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
     <meta property="og:image" content="https://localhost/static/img/logos/logo-greenaddress.png" />
@@ -93,7 +93,7 @@
       
 
 <script type="text/ng-template" id="wallet_signuplogin_header.html">
-  <div class="title">Benvenuto su GreenAddress.it!<br><small class="hidden-xs">Per piacere accedi per usare il tuo portafogli</small></div>
+  <div class="title">Benvenuto su GreenAddress.it!<br><small class="hidden-xs">Per piacere accedi per usare il tuo portafoglio</small></div>
 </script>
 
 <div ng-controller="WalletController" id="content_container">
@@ -110,7 +110,7 @@
   <div class="menu" toggle-class="visible">
   <ul>
     <li class="menu-header"><img src="/static/img/logos/logo-greenaddress-white.png" alt="GreenAddress.it" /> GreenAddress.it</li>
-    <li path="/info"><a href="#/info">Info conto</a></li>
+    <li path="/info"><a href="#/info">Saldo</a></li>
     <li path="/transactions"><a href="#/transactions">Transazioni</a></li>
     <li ng-show="wallet.hdwallet.secret_exponent_bytes" path="/send"><a href="#/send">Invia denaro</a></li>
     <li path="/receive"><a href="#/receive">Ricevi</a></li>

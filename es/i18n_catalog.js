@@ -74,7 +74,7 @@ globals.i18n_catalog = {
 "Checksum validation failed!": "Error al validar Checksum!",
 "Already redeemed": "Redimidos",
 "You must provide encryption passphrase.": "Debe ingresar una clave de encriptación",
-"Error Decrypting Wallet. Please check your password is correct.": "Error decriptando Wallet. Por favor verifique su contraseña.",
+"Error Decrypting Wallet. Please check your password is correct.": "Error decriptando Wallet. Por favor verifique tu contraseña.",
 "Time,Description,satoshis,": "Tiempo,Descripción,satoshis",
 "Received from ": "Recibido desde",
 "Reddit message sent": "Mensaje de Reddit enviado",

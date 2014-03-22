@@ -15,14 +15,14 @@
             <span class="input-group-addon">
               <span class="glyphicon glyphicon-search"></span>
             </span>
-            <input ng-controller="AddressBookController" ng-model="send_tx.recipient" class="form-control" type="text" id="recipient" name="recipient" placeholder="Inserisci il nome del destinatrio o indirizzo bitcoin, email, SMS, Facebook o Twitter"
+            <input ng-controller="AddressBookController" ng-model="send_tx.recipient" class="form-control" type="text" id="recipient" name="recipient" placeholder="Inserisci il nome del destinatario o indirizzo bitcoin, email, SMS, Facebook o Twitter"
                     typeahead="item as item.name for item in addressbook.items | filter:$viewValue | limitTo:8" />
             
           </div>
         </div>
       </div>
       <div class="form-group" ng-hide="send_tx.recipient_is_btcaddr() || wallet.send_unencrypted">
-        <label class="col-sm-2 control-label" for="recipient">Stampa passphrase</label>
+        <label class="col-sm-2 control-label" for="recipient">Password per riscattare i fondi</label>
         <div class="col-sm-10">
           <div class="input-group">
             <input ng-model="send_tx.passphrase" class="form-control" type="text" />
@@ -81,7 +81,7 @@
       with passphrase: <input type="text" ng-model="send_tx.passphrase" />
   </li>
   <li ng-show="send_tx.encrypted_key !== undefined">
-      Encrypted key: (( send_tx.encrypted_key || "calcolando" )) <a href="" ng-click="send_tx.send_to_priv_done()">done</a>
+      Encrypted key: (( send_tx.encrypted_key || "elaborazione" )) <a href="" ng-click="send_tx.send_to_priv_done()">done</a>
       <div ng-show="send_tx.encrypted_key">
           Send to email: <input type="email" ng-model="send_tx.email" /> <a href="" ng-click="send_tx.send_to_email()" ng-show="!send_tx.sending_email">send</a>
       </div>
