@@ -137,6 +137,7 @@
 // /en/i18n_catalog/ :: get_catalog() modifies it
 i18n_catalog = {};
 
+if (window.get_catalog) get_catalog(window);
 
 gettext = function (msgid) {
     var value = i18n_catalog[msgid];
