@@ -94,6 +94,7 @@ angular.module('greenWalletReceiveControllers',
                 var script = Crypto.util.hexToBytes(data);
                 var address = new Bitcoin.Address(Bitcoin.Util.sha256ripe160(script));
                 address.version = cur_coin_p2sh_version;
+                $scope.receive.bitcoin_address = address.toString();
                 $scope.receive.base_bitcoin_uri = $scope.receive.bitcoin_uri = 'bitcoin:' + address.toString();
                 if ($scope.receive.amount) {
                     $scope.receive.bitcoin_uri += '?amount=' + formatAmountBitcoin($scope.receive.amount);

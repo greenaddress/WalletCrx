@@ -35,9 +35,17 @@
               <a href="((receive.bitcoin_uri))" onclick="return false;">((receive.bitcoin_uri))</a>
           </p>
           <div class="pull-right">
-            <button class="btn btn-info btn-block-xs" ng-click="show_bitcoin_uri()" ng-hide="receive.bitcoin_uri">Mostra</button>
+            <button class="btn btn-info btn-block-xs" ng-click="show_bitcoin_uri()" ng-hide="receive.bitcoin_uri">Show URI and address</button>
             <a class="btn btn-default btn-block-xs" ng-click="show_bitcoin_uri(true)"><i class="glyphicon glyphicon-qrcode"></i> Mostra Codice QR</a>
           </div>
+        </div>
+      </div>
+      <div class="form-group" ng-show="receive.bitcoin_uri">
+        <label class="col-sm-2 control-label" for="amount">Indirizzo</label>
+        <div class="col-sm-10">
+          <p class="form-control-static payment-url" style="display:inline-block;">
+              ((receive.bitcoin_address))
+          </p>
         </div>
       </div>
       <hr>

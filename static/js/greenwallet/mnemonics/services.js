@@ -46,6 +46,7 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
                 binary += binPart;
             }
             var retval = new BigInteger(binary, 2).toByteArrayUnsigned();
+            while (retval.length < 33) retval.unshift(0);
             var checksum = retval.pop();
             var hash = Crypto.SHA256(retval, {asBytes: true});
             if(hash[0] != checksum) deferred.reject('Checksum does not match');  // checksum
@@ -72,8 +73,8 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
             }
 
             var binary = BigInteger.fromByteArrayUnsigned(data).toRadix(2);
-            while (binary.length < data.length * 8) { binary = '0' + binary; }
-
+            while (binary.length < 256) { binary = '0' + binary; }
+            while (data.length < 32) data.unshift(0);
             var hash = BigInteger.fromByteArrayUnsigned(Crypto.SHA256(data, {asBytes: true})).toRadix(2);
             while (hash.length < 256) { hash = '0' + hash; }
             binary += hash.substr(0, data.length / 4);  // checksum
@@ -91,7 +92,13 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
         var shaObj = new jsSHA(seed, 'HEX');
         return shaObj.getHMAC('GreenAddress.it HD wallet path', 'TEXT', 'SHA-512', 'HEX'); 
     }
-    mnemonics.toSeed = function(mnemonic, k) {
+    mnemonics.toSeed = function(mnemonic, k, validated) {
+        var that = this;
+        if (!validated) {
+            return that.validateMnemonic(mnemonic).then(function() {
+                return that.toSeed(mnemonic, k, true);
+            });
+        }
         var deferred = $q.defer();
         k = k || 'mnemonic';
         var m = mnemonic;

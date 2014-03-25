@@ -7,13 +7,6 @@
             </div>
             <div class="create-modal-body text-center">
                 <div ng-include=" 'wallet_signuplogin_header.html' "></div>
-                <div ng-show="!wallet.send_to_receiving_id">
-                    <hr>
-                    <div class="subtitle">O accedi in modalità watch only</div>
-                    
-                    <button ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Login custom</button>
-                    
-                </div>
                 <hr>
                 <div class="subtitle">Accedi per pieno accesso al portafogli</div>
                 <form class="form-inline" ng-submit="login()" ng-class="{'has-error': state.mnemonic_error}">
@@ -27,6 +20,13 @@
                             ng-class="{'has-error': state.mnemonic_error}" />
                         
                         <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Generazione mnemonic in corso ..: (( state.mnemonic_error ))</span>
+                    </div>
+                    <div ng-show="!wallet.send_to_receiving_id">
+                        <hr>
+                        <div class="subtitle">O accedi in modalità watch only</div>
+                        
+                        <a href="" ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Login custom</a>
+                        
                     </div>
                     <hr>
                     <button type="submit" ng-disabled="is_loading || (state.seed_progress && !state.login_error)"

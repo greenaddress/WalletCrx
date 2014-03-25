@@ -58,6 +58,7 @@ angular.module('greenWalletServices', [])
         var promise = tx_sender.login(logout), that = this;
         promise = promise.then(function(data) {
             if (data) {
+                tx_sender.wallet = $scope.wallet;
                 $scope.wallet.hdwallet = hdwallet;
                 $scope.wallet.mnemonic = mnemonic;
                 if (data.last_login) {
@@ -115,6 +116,7 @@ angular.module('greenWalletServices', [])
         var promise = tx_sender.loginWatchOnly(token_type, token, logout), that = this;
         promise = promise.then(function(json) {
             var data = JSON.parse(json);
+            tx_sender.wallet = $scope.wallet;
             $scope.wallet.hdwallet = new GAHDWallet({
                 public_key_hex: data.public_key,
                 chain_code_hex: data.chain_code
@@ -141,29 +143,6 @@ angular.module('greenWalletServices', [])
             }
         });
         return promise;
-    };
-    walletsService.restore = function(data, $scope) {
-        var wallet;
-        if (data.payload == null) {
-            // If we don't have any wallet data then we must have two factor authentication enabled
-            notices.setLoadingText('Validating Authentication key');
-            wallet = walletsService.download($scope, data.guid, data.pin, data.twofactor_code);
-        } else {
-            wallet = $.when({ payload: data.payload });
-        }
-        return wallet.then(function(wallet) {
-            var decrypted = walletsService.decrypt(wallet.payload, data.password);
-            if (decrypted) {
-                angular.extend($scope.wallet, JSON.parse(decrypted));
-                if($location.search().redir) {
-                    $location.url($location.search().redir);
-                } else {
-                    $location.url('/info/');
-                }
-            } else {
-                throw 'Error Decrypting Wallet. Please check your password is correct.';
-            }
-        });
     };
     walletsService.getTransactions = function($scope) {
         var transactions_key = $scope.wallet.receiving_id + 'transactions'
@@ -607,7 +586,16 @@ angular.module('greenWalletServices', [])
         }
         return d.promise;
     };
-    
+    var isMobile = /Android|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile && typeof document.addEventListener !== undefined) {
+        // reconnect on tab shown in mobile browsers
+        document.addEventListener("visibilitychange", function() {
+            if (!document.hidden && txSenderService.wallet) {
+                txSenderService.wallet.update_balance();
+                txSenderService.wallet.refresh_transactions();
+            }
+        }, false);
+    }
     var onAuthed = function(s) {
         session = s;
         session.subscribe('http://greenaddressit.com/tx_notify', function(topic, event) {
@@ -626,6 +614,16 @@ angular.module('greenWalletServices', [])
         } else {
             d1 = $q.when(true);
         }
+        d1.catch(function(err) { 
+            if (err.uri == 'http://greenaddressit.com/error#doublelogin') {
+                if (txSenderService.wallet) txSenderService.wallet.clear();
+                $location.path('/concurrent_login');
+            } else {
+                notices.makeNotice('error', gettext('An error has occured which forced us to log you out.'))
+                if (txSenderService.wallet) txSenderService.wallet.clear();
+                $location.path('/');
+            }
+        });
         if (txSenderService.pin_ident) {
             // resend PIN to allow PIN changes in the event of reconnect
             d2 = session.call('http://greenaddressit.com/pin/get_password',
@@ -711,6 +709,7 @@ angular.module('greenWalletServices', [])
         txSenderService.logged_in = false;
         txSenderService.hdwallet = undefined;
         txSenderService.watch_only = undefined;
+        if (txSenderService.wallet) txSenderService.wallet.clear();
     };
     txSenderService.loginWatchOnly = function(token_type, token, logout) {
         var d = $q.defer();

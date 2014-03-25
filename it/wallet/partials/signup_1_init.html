@@ -14,18 +14,19 @@
                 </div>
             </div>
 
-            <div class="create-modal-body">
+            <div class="create-modal-body" ng-hide="signup.unexpected_error">
                 <div class="title">Ora puoi vantarti di avere un portafoglio Bitcoin<br>
                     <small>Per piacere completa questi 4 passaggi per configurare e per rendere sicuro il tuo portafoglio.</small>
                 </div>
                 <hr>
-                <div class="mnemonic-label">La tua passphrase mnemonica</div>
-                <div class="mnemonic info" ng-bind="signup.mnemonic">Generazione mnemonica in corso...</div>
+                <div class="mnemonic-label ng-cloak" ng-show="signup.mnemonic">La tua passphrase mnemonica</div>
+                <div class="mnemonic info ng-cloak" ng-bind="signup.mnemonic" ng-show="signup.mnemonic"></div>
+                <div class="mnemonic info" ng-hide="signup.mnemonic">Generating mnemonic, please wait...</div>
                 <hr>
                 <p>Per piacere scrivi e non perdere queste parole perchè non possono essere recuperate altrimenti. <b>Non salviamo queste parole sui nostri server dunque non possiamo aiutarti a recuperarle se le perdi!</b></p>
             </div>
 
-            <div class="create-modal-footer">
+            <div class="create-modal-footer" ng-hide="signup.unexpected_error">
                 <label for="checkbox-confirmation">
                     <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Confermo che la mia passphrase è al sicuro e aderisco<a href="/tos" target="_blank">Termini di Servizio</a>
                 </label>
@@ -36,6 +37,13 @@
                 
                 <a ng-hide="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_pin#content_container">Continua!</a>
                 <a ng-show="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_oauth#content_container">Continua!</a>
+            </div>
+
+            <div class="create-modal-footer" ng-show="signup.unexpected_error">
+                <a class="btn btn-danger login-submit" href="" ng-click="signup.try_again()">
+                    Error:  (( signup.unexpected_error )).  Click to try again
+                </a>
+            </button>
             </div>
 
         </div>

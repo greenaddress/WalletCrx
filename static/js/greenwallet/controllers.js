@@ -20,7 +20,7 @@ angular.module('greenWalletControllers', [])
             $location.path('/');
         });
     };
-    var updating = true;
+    var updating = true, updating_txs = false;
     var clearwallet = function() {
         $scope.wallet = {
             update_balance: function(first) {
@@ -35,6 +35,14 @@ angular.module('greenWalletControllers', [])
                     }
                 }).finally(function() { updating = false; });
             },
+            refresh_transactions: function() {
+                if (updating_txs) return;
+                updating_txs = true;
+                wallets.getTransactions($scope).then(function(data) {
+                    $scope.wallet.transactions = data;
+                }).finally(function() { updating_txs = false; });
+            },
+            clear: clearwallet,
             get_tx_output_value: function(txhash, i) {
                 if (tx_sender.electrum) {
                     var d = $q.defer();
@@ -55,21 +63,13 @@ angular.module('greenWalletControllers', [])
         };
     };
     clearwallet();
-    var updating_txs = false;
-    var refresh_transactions = function() {
-        if (updating_txs) return;
-        updating_txs = true;
-        wallets.getTransactions($scope).then(function(data) {
-            $scope.wallet.transactions = data;
-        }).finally(function() { updating_txs = false; });
-    };
     $scope.$on('block', function(event, data) {
         if (!$scope.wallet.transactions || !$scope.wallet.transactions.list.length) return;
         $scope.$apply(function() {
             for (var i = 0; i < $scope.wallet.transactions.list.length; i++) {
                 if (!$scope.wallet.transactions.list[i].block_height) {
                     // if any unconfirmed, refetch all txs to get the block height
-                    refresh_transactions();
+                    $scope.wallet.refresh_transactions();
                     break;
                 }
                 $scope.wallet.transactions.list[i].confirmations = data.count - $scope.wallet.transactions.list[i].block_height + 1;
@@ -81,12 +81,12 @@ angular.module('greenWalletControllers', [])
     }
     $scope.$on('login', function() {
         $scope.wallet.update_balance(true);
-        refresh_transactions();
+        $scope.wallet.refresh_transactions();
         $scope.$on('transaction', function(event, data) {
             if (updating) return;
             updating = true;
             $scope.wallet.update_balance();
-            refresh_transactions();
+            $scope.wallet.refresh_transactions();
         });
         if ($scope.wallet.expired_deposits && $scope.wallet.expired_deposits.length) {
             $modal.open({

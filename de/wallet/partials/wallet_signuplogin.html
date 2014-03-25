@@ -7,13 +7,6 @@
             </div>
             <div class="create-modal-body text-center">
                 <div ng-include=" 'wallet_signuplogin_header.html' "></div>
-                <div ng-show="!wallet.send_to_receiving_id">
-                    <hr>
-                    <div class="subtitle">Melden Sie sich an im Nur-Schauen-Modus</div>
-                    
-                    <button ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Manuelles Anmelden</button>
-                    
-                </div>
                 <hr>
                 <div class="subtitle">Anmelden für vollen Zugriff auf die Brieftasche</div>
                 <form class="form-inline" ng-submit="login()" ng-class="{'has-error': state.mnemonic_error}">
@@ -27,6 +20,13 @@
                             ng-class="{'has-error': state.mnemonic_error}" />
                         
                         <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Ungültiges Mnemonikum: (( state.mnemonic_error ))</span>
+                    </div>
+                    <div ng-show="!wallet.send_to_receiving_id">
+                        <hr>
+                        <div class="subtitle">Melden Sie sich an im Nur-Schauen-Modus</div>
+                        
+                        <a href="" ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Manuelles Anmelden</a>
+                        
                     </div>
                     <hr>
                     <button type="submit" ng-disabled="is_loading || (state.seed_progress && !state.login_error)"

@@ -129,7 +129,31 @@ angular.module('greenWalletSendControllers',
             return {success: true};
         });
     };
+    var parse_bitcoin_uri = function(uri) {
+        // FIXME: Should do better parsing, checking label and message too
+        if (uri.indexOf("bitcoin:") == -1) {
+            // not an URI
+            return [undefined, undefined];
+        } else {
+            if (uri.indexOf("?") == -1) {
+                // no amount
+                return [uri.split("bitcoin:")[1], undefined];
+            } else {
+                var recipient =  uri.split("bitcoin:")[1].split("?")[0];
+                if (uri.indexOf("amount=") != -1) {
+                    var amount = uri.split("amount=")[1];
+                    if (amount.indexOf("&") != -1) {
+                        amount = amount.split("&")[0];
+                    }
+                    return [recipient, amount];
+                } else {  // no amount
+                    return [recipient, undefined];
+                }
+            }
+        }
+    }
     var iframe;
+    var mul = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
     $scope.send_tx = {
         add_fee: 'sender',
         recipient: $routeParams.contact ? JSON.parse(UTF8.bytesToString(Crypto.util.base64ToBytes($routeParams.contact))) : null,
@@ -143,27 +167,18 @@ angular.module('greenWalletSendControllers',
                     "Format: " + result.format + "\n" +
                     "Cancelled: " + result.cancelled);
                     if (!result.cancelled && result.format == "QR_CODE") {
-                          gaEvent('Wallet', 'SendReadQrCodeSuccessful');
-                          // FIXME: Should do better parsing, checking label and message too
-                          $scope.$apply(function() { 
-                              if (result.text.indexOf("bitcoin:") == -1) {
-                                  that.recipient = result.text;
-                              } else {
-                                  if (result.text.indexOf("?") == -1) {
-                                      that.recipient = result.text.split("bitcoin:")[1];
-                                  } else {
-                                      that.recipient = result.text.split("bitcoin:")[1].split("?")[0];
-
-                                      if (result.text.indexOf("amount=") != -1) {
-                                          var amount = result.text.split("amount=")[1];
-                                          if (amount.indexOf("&") != -1) {
-                                              amount = amount.split("&")[0];
-                                          }
-                                          that.amount = amount;
-                                      }
-                                  }
-                              }
-                          });
+                        gaEvent('Wallet', 'SendReadQrCodeSuccessful');
+                        $scope.$apply(function() {
+                            parsed_uri = parse_bitcoin_uri(result.text);
+                            if (parsed_uri[0]) {
+                                that.recipient = parsed_uri[0];
+                                if (parsed_uri[1]) {
+                                    that.amount = btcToUnit(parsed_uri[1]);
+                                }
+                            } else {
+                                that.recipient = result.text;
+                            }
+                        });
                     }
                 }, 
                 function (error) {
@@ -389,6 +404,8 @@ angular.module('greenWalletSendControllers',
         },
         send_address: function() {
             var to_addr = this.recipient.constructor === String ? this.recipient : this.recipient.address;
+            var parsed_uri = parse_bitcoin_uri(to_addr);
+            if (parsed_uri[0]) to_addr = parsed_uri[0];
             var that = this;
             var satoshis = that.amount_to_satoshis(that.amount);
             $rootScope.is_loading += 1;
@@ -471,8 +488,27 @@ angular.module('greenWalletSendControllers',
             this.encrypted_key = undefined;
         }
     };
+    var btcToUnit = function(btc) {
+        var amount_satoshi = Bitcoin.Util.parseValue(btc);
+        return Bitcoin.Util.formatValue(amount_satoshi.multiply(BigInteger.valueOf(mul)));
+    }
+    $scope.$watch('send_tx.recipient', function(newValue, oldValue) {
+        if (newValue === oldValue) return;
+        var parsed_uri = parse_bitcoin_uri(newValue);
+        if (parsed_uri[1]) {    
+            $scope.send_tx.amount = btcToUnit(parsed_uri[1]);
+        }
+    });
+    $scope.$watch('send_tx.amount', function(newValue, oldValue) {
+        if (newValue !== oldValue) {
+            var parsed_uri = parse_bitcoin_uri($scope.send_tx.recipient);
+            if (parsed_uri[1] && newValue != btcToUnit(parsed_uri[1])) {
+                // replace the URI with recipient when amount is changed
+                $scope.send_tx.recipient = parsed_uri[0];
+            }
+        }
+    });
     if ($scope.send_tx.recipient && $scope.send_tx.recipient.amount) {
-        var mul = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000}[$scope.wallet.unit];
         $scope.send_tx.amount = Bitcoin.Util.formatValue(
             new BigInteger($scope.send_tx.recipient.amount.toString()).multiply(BigInteger.valueOf(mul)));
         $scope.send_tx.add_fee = 'sender';
