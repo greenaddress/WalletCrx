@@ -36,7 +36,6 @@
     <link href="/static/css/greenaddress.css" rel="stylesheet">
     
     
-    
     <script src="/static/wallet/config.js"></script>
     <script src="/fr/i18n_catalog.js"></script>
     
@@ -80,6 +79,7 @@
     
     
     
+    
     <style type="text/css">
     * { -webkit-user-select: text; }
     [ng\:cloak],[ng-cloak],[data-ng-cloak],[x-ng-cloak],.ng-cloak,.x-ng-cloak,.ng-hide{display:none !important;}
@@ -87,21 +87,23 @@
     .ng-animate-block-transitions{transition:0s all!important;-webkit-transition:0s all!important;}</style>
     <script type="text/javascript" src="/electrum.js"></script>
     
+    
   </head>
   <body id="wallet">
     
     <div id="content">
       
 
-<script type="text/ng-template" id="wallet_signuplogin_header.html">
-  <div class="title">Bienvenue chez GreenAddress.it !<br><small class="hidden-xs">Connectez-vous pour utiliser votre porte-monnaie</small></div>
-</script>
-
 <div ng-controller="WalletController" id="content_container">
   <div ng-show="wallet.hdwallet.public_key && !wallet.hidden && is_loading" ng-cloak>
     <div id="loading"><div class="spin"></div></div>
   </div>
-  <div ng-repeat="notice in notices" class="notice notice-((notice.type))" ng-cloak>((notice.msg))</div>
+  <div ng-repeat="notice in notices" class="notice notice-((notice.type))" ng-cloak>
+    <i class="glyphicon glyphicon-exclamation-sign" ng-show="notice.type == 'error'"></i>
+    <i class="glyphicon glyphicon-ok-sign" ng-show="notice.type == 'success'"></i>
+    <i class="glyphicon glyphicon-info-sign" ng-show="notice.type == 'info'"></i>
+    ((notice.msg))
+  </div>
   <div class="menu-mobile" toggle-class="visible">
     <i class="menu-mobile-toggle menu-mobile-toggle-open glyphicon glyphicon-align-justify" toggle-class="visible" ng-click="toggle_set(true)"></i>
     <i class="menu-mobile-toggle menu-mobile-toggle-close glyphicon glyphicon-remove" toggle-class="visible" ng-click="toggle_set(false)"></i>

@@ -1,9 +1,8 @@
 angular.module('greenWalletInfoControllers',
     ['greenWalletServices'])
-.controller('InfoController', ['$scope', 'wallets', 'tx_sender', '$modal', '$q', 'notices', '$location', 'gaEvent',
-        function InfoController($scope, wallets, tx_sender, $modal, $q, notices, $location, gaEvent) {
+.controller('InfoController', ['$scope', 'wallets', 'tx_sender', '$modal', '$q', 'notices', '$location', 'gaEvent', 'cordovaReady',
+        function InfoController($scope, wallets, tx_sender, $modal, $q, notices, $location, gaEvent, cordovaReady) {
     if(!wallets.requireWallet($scope)) return;
-
     try {
         navigator.registerProtocolHandler('bitcoin', 'https://'+window.location.hostname+'/uri/?uri=%s', 'GreenAddress.It');
     } catch(e) {}
@@ -20,20 +19,24 @@ angular.module('greenWalletInfoControllers',
         var prevDate;
         var balance = parseInt($scope.wallet.final_balance), balances_arr = [];
         var bMin = balance, bMax = balance;
-        for(var i = 0; i < $scope.wallet.transactions.list.length; i++) {
-            var tx = $scope.wallet.transactions.list[i];
-            var curDate = tx.ts;
-            if (i == 0 || (prevDate - curDate) / 1000 > 3600) {
-                balances_arr.unshift({date: curDate, balance: balance});
-                bMin = Math.min(bMin, balance); bMax = Math.max(bMax, balance);
-                prevDate = curDate;
+        if ($scope.wallet.transactions) {
+            for(var i = 0; i < $scope.wallet.transactions.list.length; i++) {
+                var tx = $scope.wallet.transactions.list[i];
+                var curDate = tx.ts;
+                if (i == 0 || (prevDate - curDate) / 1000 > 3600) {
+                    balances_arr.unshift({date: curDate, balance: balance});
+                    bMin = Math.min(bMin, balance); bMax = Math.max(bMax, balance);
+                    prevDate = curDate;
+                }
+                balance -= parseInt(tx.value);
             }
-            balance -= parseInt(tx.value);
         }
         if (balances_arr.length < 2) {
+            balances_arr = [{date: new Date(), balance: 0}];
             $scope.wallet.has_graph = false;
             gaEvent('Wallet', 'NotEnoughTxForBalanceGraph');
-            return;
+        } else {
+            $scope.wallet.has_graph = true;
         }
         var balances = crossfilter(balances_arr);
         var byDate = balances.dimension(function(d) {return d.date} );
@@ -60,6 +63,13 @@ angular.module('greenWalletInfoControllers',
                 function(chart) {
                     chart.select("svg").attr("viewBox",
                             "0 0 " + size[0] + " " + size[1]).attr("preserveAspectRatio", "xMidYMid")
+                    if (!$scope.wallet.has_graph) {
+                        var text = chart.select("svg").selectAll("text").data(['empty']).enter().append("text");
+                        text.attr("x", size[0]/2)
+                            .attr("y", size[1]/2)
+                            .attr("text-anchor", "middle")
+                            .text(gettext("Not enough data to draw the graph"));
+                    }
                 });
         btcGraph.xAxis().ticks(Math.floor(size[0]/100));
         btcGraph.yAxis().ticks(Math.floor(size[1]/30));
@@ -74,13 +84,11 @@ angular.module('greenWalletInfoControllers',
     }
 
     $scope.$watch('wallet.transactions', function(newValue, oldValue) {
-        if (!$scope.wallet.transactions) return;
+        if (!$scope.wallet.transactions) { update_graph(); return; }
         $scope.wallet.transactions.limit = 10;
         $scope.wallet.transactions.populate_csv();
-        update_graph();
+        if ($scope.wallet.transactions.list.length) update_graph();
     });
-
-    
 
     var redeem = function(encrypted_key, password) {
         var deferred = $q.defer()
@@ -142,7 +150,7 @@ angular.module('greenWalletInfoControllers',
                         });
                     }, function(fail) {
                         deferred.reject([fail == 'invalid_passphrase', errors[fail] || fail]);
-                    }, "BIP38", "decrypt", [$scope.receive.encrypted_key, $scope.receive.passphrase, cur_coin]);
+                    }, "BIP38", "decrypt", [encrypted_key, password, cur_coin]);
                 })();
             } else {
                 var worker = new Worker("/static/js/bip38_worker.min.js");
@@ -193,7 +201,7 @@ angular.module('greenWalletInfoControllers',
             };
         
             var modal = $modal.open({
-                templateUrl: 'redeem_password_modal.html',
+                templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signuplogin/redeem_password_modal.html',
                 scope: $scope
             });
             gaEvent('Wallet', 'SocialRedeemModal');
@@ -204,6 +212,7 @@ angular.module('greenWalletInfoControllers',
         }
         $scope.redeem_shown = true;
     }
+
     if ($scope.wallet.send_to_receiving_id && !$scope.wallet.send_to_receiving_id_shown) {
         gaEvent('Wallet', 'SendToReceivingId');
         $scope.wallet.send_to_receiving_id_shown = true;

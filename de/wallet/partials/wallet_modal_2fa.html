@@ -12,17 +12,12 @@
                     (( twofactor_method_names[method] ))<br/>
                 </label>
             </div>
-            <p ng-show="twofac.codes_requested[twofac.twofactor_method]">Please enter your (( twofactor_method_names[twofac.twofactor_method] )) authentication code which we have just sent to you.<span ng-show="twofac_modal_gauth"> Then enter the Google Authenticator code into the second field and click OK. </span></p>
+            <p ng-show="twofac.codes_requested[twofac.twofactor_method]">Please enter your (( twofactor_method_names[twofac.twofactor_method] )) authentication code which we have just sent to you.</p>
             
             <div class="form-inline" ng-show="twofac.twofactor_method == 'gauth' || twofac.codes_requested[twofac.twofactor_method]">
                 <p>Please enter the  (( twofactor_method_names[twofac.twofactor_method] ))  code:
                 <input clickfix focus-on="twoFactorModal" class="form-control pin" type="tel" mask-input required="required"
                    maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" ng-model="twofac.twofactor_code" /></p>
-                <div ng-if="twofac_modal_gauth">
-                    <p>Please enter the Google Authenticator code:
-                    <input clickfix class="form-control pin" type="tel" mask-input required="required"
-                       maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/" ng-model="twofac.gauth_code" /></p>
-                </div>
             </div>
             <div ng-hide="twofac.twofactor_method == 'gauth' || twofac.codes_requested[twofac.twofactor_method]">
                 <input type="button" class="btn btn-primary" value="Request code" ng-click="twofac.request_code()" ng-disabled="twofac.requesting_code" />

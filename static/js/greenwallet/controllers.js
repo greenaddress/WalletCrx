@@ -1,6 +1,6 @@
 angular.module('greenWalletControllers', [])
-.controller('WalletController', ['$scope', 'tx_sender', '$modal', 'notices', 'gaEvent', '$location', 'wallets', '$http', '$timeout', '$q',
-        function WalletController($scope, tx_sender, $modal, notices, gaEvent, $location, wallets, $http, $timeout, $q) {
+.controller('WalletController', ['$scope', 'tx_sender', '$modal', 'notices', 'gaEvent', '$location', 'wallets', '$http', '$timeout', '$q', 'parse_bitcoin_uri', 'parseKeyValue', 'backButtonHandler',
+        function WalletController($scope, tx_sender, $modal, notices, gaEvent, $location, wallets, $http, $timeout, $q, parse_bitcoin_uri, parseKeyValue, backButtonHandler) {
     // appcache:
     applicationCache.addEventListener('updateready', function() {
         $scope.$apply(function() {
@@ -15,12 +15,48 @@ angular.module('greenWalletControllers', [])
     };
     $scope.logout = function() {
         wallets.askForLogout($scope).then(function() {
+            var filtered_intent = $scope.wallet.filtered_intent;
             clearwallet();
             tx_sender.logout();
-            $location.path('/');
+            if (filtered_intent) navigator.app.exitApp();
+            else $location.path('/');
         });
     };
     var updating = true, updating_txs = false;
+    var destPath = $location.path(), destAmount = $location.search().amount, destUri = $location.search().uri,
+        variables = {};
+    if ($location.search().redir) {
+        destPath = $location.search().redir;
+        if (destPath.indexOf('?') != -1) {
+            variables = parseKeyValue(destPath.split('?')[1]);
+            destPath = destPath.split('?')[0];
+        }
+        destAmount = destAmount || variables.amount;
+        destUri = destUri || variables.uri;
+    }
+    if (destPath.indexOf('/redeem/') == 0) {
+        window.WalletControllerInitVars = {
+            redeem_key: destPath.slice(8).replace(/\//g, ''),
+            redeem_amount: destAmount
+        };
+    }
+    if (destPath.indexOf('/pay/') == 0) {
+        window.WalletControllerInitVars = {
+            send_to_receiving_id: destPath.slice(5).replace(/\//g, ''),
+            send_to_receiving_id_amount: destAmount,
+            send_from: Object.keys(variables).length ? variables.from : $location.search().from,
+            send_unencrypted: Object.keys(variables).length ? variables.unencrypted : $location.search().unencrypted
+        };
+    }
+    if (destPath.indexOf('/uri/') == 0) {
+        destUri = decodeURIComponent(destUri);
+        var parsed_uri = parse_bitcoin_uri(destUri);
+        var initVars = window.WalletControllerInitVars = {
+            send_to_receiving_id_bitcoin_uri: destUri
+        };    
+        initVars.send_to_receiving_id = parsed_uri[0];
+        initVars.send_to_receiving_id_amount = Bitcoin.Util.parseValue(parsed_uri[1]).toString();
+    }
     var clearwallet = function() {
         $scope.wallet = {
             update_balance: function(first) {
@@ -55,14 +91,23 @@ angular.module('greenWalletControllers', [])
                     });
                     return d.promise;
                 } else {
+                    var is_chrome_app = window.chrome && chrome.storage;
+                    // don't allow transactions in Chrome app or Cordova when no Electrum is available
+                    if (window.cordova || is_chrome_app) return $q.reject(gettext('Electrum setup failed'));
                     return $q.when($scope.wallet.transactions.output_values[[txhash, i]]);
                 }
             },
             send_to_receiving_id: window.location.href.indexOf(LANG+'/pay/') != -1 ||
-                                  window.location.href.indexOf('/uri/?uri=bitcoin') != -1
+                                  window.location.href.indexOf(LANG+'/uri/?uri=bitcoin') != -1 ||
+                                  (window.WalletControllerInitVars && WalletControllerInitVars.send_to_receiving_id),
+            signuplogin_header: BASE_URL + '/' + LANG + '/wallet/partials/signuplogin/header_wallet.html'
         };
     };
     clearwallet();
+    if ($location.search().filtered_intent === '1') {
+        backButtonHandler.pushHandler(backButtonHandler.exitAppHandler);
+        $scope.wallet.filtered_intent = true;
+    }
     $scope.$on('block', function(event, data) {
         if (!$scope.wallet.transactions || !$scope.wallet.transactions.list.length) return;
         $scope.$apply(function() {
@@ -79,6 +124,12 @@ angular.module('greenWalletControllers', [])
     if (window.WalletControllerInitVars) {
         angular.extend($scope.wallet, WalletControllerInitVars);
     }
+    if ($scope.wallet.send_to_receiving_id) {
+        $scope.wallet.signuplogin_header = BASE_URL + '/' + LANG + '/wallet/partials/signuplogin/header_pay.html'
+    }
+    if ($scope.wallet.redeem_key) {
+        $scope.wallet.signuplogin_header = BASE_URL + '/' + LANG + '/wallet/partials/signuplogin/header_redeem.html'
+    }
     $scope.$on('login', function() {
         $scope.wallet.update_balance(true);
         $scope.wallet.refresh_transactions();
@@ -90,7 +141,7 @@ angular.module('greenWalletControllers', [])
         });
         if ($scope.wallet.expired_deposits && $scope.wallet.expired_deposits.length) {
             $modal.open({
-                templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_redeposit.html',
+                templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_redeposit.html',
                 controller: 'RedepositController',
                 scope: $scope
             });
@@ -121,7 +172,7 @@ angular.module('greenWalletControllers', [])
     $scope.show_url_qr = function(url) {
         gaEvent('Wallet', 'ShowUrlQRModal');
         $modal.open({
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_url_qr.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_url_qr.html',
             controller: 'UrlQRController',
             resolve: {url: function() { return url; }}
         });
@@ -131,8 +182,8 @@ angular.module('greenWalletControllers', [])
         var pathname = window.location.pathname
         // don't include addresses:
         if (newValue.indexOf('/send/') == 0) newValue = '/send/_ad_';
-        if (pathname.indexOf('/'+LANG+'/pay/') == 0) pathname = '/'+LANG+'/pay/_ad_';
-        if (pathname.indexOf('/'+LANG+'/redeem/') == 0) pathname = '/'+LANG+'/redeem/_enckey_';
+        if (pathname.indexOf('/'+LANG+'/pay/') == 0) pathname = BASE_URL+'/'+LANG+'/pay/_ad_';
+        if (pathname.indexOf('/'+LANG+'/redeem/') == 0) pathname = BASE_URL+'/'+LANG+'/redeem/_enckey_';
         pathname = pathname + '#' + newValue;
         if ($scope.wallet.signup && !$scope.wallet.signup_info_replaced && pathname.indexOf('wallet/#/info') != -1) {
             $scope.wallet.signup_info_replaced = true;

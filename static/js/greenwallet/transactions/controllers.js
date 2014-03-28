@@ -102,7 +102,7 @@ angular.module('greenWalletTransactionsControllers',
         gaEvent('Wallet', 'TransactionsTabDetailsModal');
         $scope.selected_transaction = transaction;
         $modal.open({
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_tx_details.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_tx_details.html',
             scope: $scope
         })
     };

@@ -22,7 +22,7 @@ angular.module('greenWalletSettingsDirectives', [])
             template += '<td>' + item_name;
         }
         if (item.has_wallet) {
-            template += ' <img src="/static/img/logos/logo-greenaddress.png" height="16"/>';
+            template += ' <img src="' + BASE_URL + '/static/img/logos/logo-greenaddress.png" height="16"/>';
         }
         template += '</a></td>';
         if (interactive) {  
@@ -48,10 +48,10 @@ angular.module('greenWalletSettingsDirectives', [])
         template += '<td>';
         if (scope.wallet.hdwallet.secret_exponent_bytes && item.type != 'facebook') {
             template += 
-                        '<a href="" ng-click="delete(item.address)">' + gettext('Delete') + '</a> ' +
-                        '<a href="" ng-click="start_rename(item)">' + gettext('Rename') + '</a> ';
+                        '<a href="" ng-click="start_rename(item)"><i class="glyphicon glyphicon-edit"></i></a> ' + 
+                        '<a href="" ng-click="delete(item.address)"><i class="glyphicon glyphicon-trash"></i></a> ';
             if (interactive) {
-                template += '<a ng-show="item.renaming" href="" ng-click="submit_me()">' + gettext('Save') + '</a>';
+                template += '<a ng-show="item.renaming" href="" ng-click="submit_me()"><i class="glyphicon glyphicon-floppy-disk"></i></a>';
             }
         }
         template += '</td></tr></table>';

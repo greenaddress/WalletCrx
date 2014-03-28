@@ -15,11 +15,10 @@
 </ul>
 
 <div ng-show="twofactor_state.twofactor_type == 'gauth'">
-    <p class="well" ng-show="twofactor_state.gauth_confirmed">
+    <p class="well" ng-show="twofactor_state.twofac_gauth_switch">
         Google Authenticator est activé
-        <a class="btn btn-danger" href="" ng-click="disable_2fa_modal()">Désactiver</a>
     </p>
-    <div ng-show="!twofactor_state.gauth_confirmed" ng-if="twofactor_state.google_secret_url">
+    <div ng-show="!twofactor_state.twofac_gauth_switch" ng-if="twofactor_state.google_secret_url">
         <div class="row">
             <div class="col-sm-4">
                 <dt>1) Installer l'application</dt>
@@ -42,23 +41,18 @@
             </div>
         </div>
         <hr class="hidden-xs">
-        <div class="row" ng-show="!wallet.signup && (twofactor_state.twofac_email_confirmed || twofactor_state.twofac_sms_confirmed || twofactor_state.twofac_phone_confirmed)">
-            <div class="col-sm-4 col-sm-offset-4">
-                <button class="btn btn-default" ng-disabled="twofactor_state.requesting" ng-click="enable_gauth()">Activer Google Authenticator</button>
-            </div>
-        </div>
-        <div class="row" ng-hide="!wallet.signup && (twofactor_state.twofac_email_confirmed || twofactor_state.twofac_sms_confirmed || twofactor_state.twofac_phone_confirmed)">
+        <div class="row">
             <div class="col-sm-12">
-                <form role="form" class="form-horizontal" ng-submit="enable_gauth()">
+                <form role="form" class="form-horizontal" ng-submit="enable_twofac_gauth()">
                     <div class="form-group">
                         <label class="col-sm-4 control-label" for="wallet-google-conf-code">Code Authenticator</label>
                         <div class="col-sm-7">
                             <div class="input-group">
-                                <input ng-model="twofactor_state.gauth_code" class="form-control pin" type="tel" mask-input
+                                <input ng-model="twofactor_state.twofac_gauth_code" class="form-control pin" type="tel" mask-input
                                     required="required" maxlength="6" pattern="[0-9]{6}" ng-pattern="/[0-9]{6}/"
                                     id="wallet-google-conf-code" placeholder="Entrez le code que vous avez reçu"  />
                                 <span class="input-group-btn">
-                                    <input ng-disabled="!twofactor_state.gauth_code" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
+                                    <input ng-disabled="!twofactor_state.twofac_gauth_code" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
                                 </span>
                             </div>
                         </div>
@@ -70,11 +64,10 @@
 </div>
 
 <div ng-show="twofactor_state.twofactor_type == 'email'">
-    <p class="well" ng-show="twofactor_state.twofac_email_confirmed">
+    <p class="well" ng-show="twofactor_state.twofac_email_switch">
         L'authentification deux-facteurs par email est activée
-        <a class="btn btn-danger" href="" ng-click="disable_2fa_modal()">Désactiver</a>
     </p>
-    <div ng-show="!twofactor_state.twofac_email_confirmed">
+    <div ng-show="!twofactor_state.twofac_email_switch">
         <div ng-show="!twofactor_state.email_set">
             <form role="form" class="form-horizontal" ng-submit="start_enabling_email()" style="margin:25px 0;">
                 <div class="form-group">
@@ -82,10 +75,10 @@
                     <div class="col-sm-7">
                         <div class="input-group">
                             <input class="form-control" ng-model="twofactor_state.new_twofac_email"
-                                id="wallet-twofac-email" type="email" required="required"
+                                id="wallet-twofac-email" type="email" name="email" required="required"
                                 placeholder="Entrez votre adresse email" />
                             <span class="input-group-btn">
-                                <input ng-disabled="!twofactor_state.new_twofac_email || twofactor_state.requesting" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
+                                <input ng-disabled="!twofactor_state.new_twofac_email || twofactor_state.enabling_email" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
                             </span>
                         </div>
                     </div>
@@ -116,9 +109,8 @@
 </div>
 
 <div ng-show="twofactor_state.twofactor_type == 'sms'">
-    <p class="well" ng-show="twofactor_state.twofac_sms_confirmed">L'authentification deux-facteurs par SMS est activée
-        <a class="btn btn-danger" href="" ng-click="disable_2fa_modal()">Désactiver</a></p>
-    <div ng-show="!twofactor_state.twofac_sms_confirmed">
+    <p class="well" ng-show="twofactor_state.twofac_sms_switch">L'authentification deux-facteurs par SMS est activée</p>
+    <div ng-show="!twofactor_state.twofac_sms_switch">
         <div ng-show="!twofactor_state.sms_set">
             <form role="form" class="form-horizontal" ng-submit="start_enabling_sms()" style="margin:25px 0;">
                 <div class="form-group">
@@ -126,9 +118,9 @@
                     <div class="col-sm-7">
                         <div class="input-group">
                             <input class="form-control" ng-model="twofactor_state.new_twofac_sms" id="wallet-twofac-sms"
-                                type="tel" required="required" placeholder="+NN... Entrez votre numéro de téléphone" />
+                                type="tel" name="phone" required="required" placeholder="+NN... Entrez votre numéro de téléphone" />
                             <span class="input-group-btn">
-                                <input ng-disabled="!twofactor_state.new_twofac_sms || twofactor_state.requesting" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
+                                <input ng-disabled="!twofactor_state.new_twofac_sms || twofactor_state.enabling_sms" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
                             </span>
                         </div>
                     </div>
@@ -158,19 +150,18 @@
 </div>
 
 <div ng-show="twofactor_state.twofactor_type == 'phone'">
-    <p class="well" ng-show="twofactor_state.twofac_phone_confirmed">L'authentification deux-facteurs par email est activée
-        <a class="btn btn-danger" href="" ng-click="disable_2fa_modal()">Désactiver</a></p>
-    <div ng-show="!twofactor_state.twofac_phone_confirmed">
+    <p class="well" ng-show="twofactor_state.twofac_phone_switch">L'authentification deux-facteurs par email est activée</p>
+    <div ng-show="!twofactor_state.twofac_phone_switch">
         <div ng-show="!twofactor_state.phone_set">
             <form role="form" class="form-horizontal" ng-submit="start_enabling_phone()" style="margin:25px 0;">
                 <div class="form-group">
                     <label class="col-sm-4 control-label" for="wallet-twofac-phone">Votre numéro de téléphone</label>
                     <div class="col-sm-7">
                         <div class="input-group">
-                            <input class="form-control" ng-model="twofactor_state.new_twofac_phone" id="wallet-twofac-phone"
+                            <input class="form-control" ng-model="twofactor_state.new_twofac_phone" name="phone" id="wallet-twofac-phone"
                                 type="tel" required="required" placeholder="+NN... Entrez votre numéro de téléphone" />
                             <span class="input-group-btn">
-                                <input ng-disabled="!twofactor_state.new_twofac_phone || twofactor_state.requesting" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
+                                <input ng-disabled="!twofactor_state.new_twofac_phone || twofactor_state.enabling_phone" type="submit" class="btn btn-default" style="margin-top:0; margin-bottom:0;" value="Activer"/>
                             </span>
                         </div>
                     </div>

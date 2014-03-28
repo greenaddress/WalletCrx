@@ -11,7 +11,7 @@ angular.module('greenWalletReceiveControllers',
             tx_sender.call('http://greenaddressit.com/addressbook/get_my_addresses').then(function(data) {
                 $scope.receive.my_addresses = data;
                 $modal.open({
-                    templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_my_addresses.html',
+                    templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_my_addresses.html',
                     scope: $scope
                 });
             }, function(err) {

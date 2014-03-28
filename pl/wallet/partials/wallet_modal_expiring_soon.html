@@ -1,11 +1,11 @@
 <div class="modal-header">
-    <h3>Wkrótce wygasające wyjścia</h3>
+    Wkrótce wygasające wyjścia
 </div>
 
 <div class="modal-body">
 
     <p ng-show="!soon_nlocktimes.list.length">Nie znaleziono żadnych aktywnych transakcji nLockTime</p>
-    <table class="table" ng-show="soon_nlocktimes.list.length">
+    <table class="table break-all" ng-show="soon_nlocktimes.list.length">
         <tr><th>Hash transakcji, numer wyjścia</th><th>nLockTime</th></tr>
         <tr ng-repeat="nlocktime in soon_nlocktimes.list">
             <td>(( nlocktime.txhash )), (( nlocktime.output_n ))</td>

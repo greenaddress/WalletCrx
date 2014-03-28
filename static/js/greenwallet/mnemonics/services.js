@@ -3,39 +3,33 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
     var mnemonics = {};
     var english_txt;
     var getEnglishTxt = function() {
-        var deferred = $q.defer();
-        if (english_txt) deferred.resolve(english_txt);
+        if (english_txt) return $q.when(english_txt);
         else {
-            $http.get('/static/js/greenwallet/english.txt').success(function(data) {
-                english_txt = data;
-                deferred.resolve(english_txt);
+            return $http.get(BASE_URL+'/static/js/greenwallet/english.txt').then(function(response) {
+                english_txt = response.data;
+                return english_txt;
             });
         }
-        return deferred.promise;
     };
     var getMnemonicMap = function() {
-        var deferred = $q.defer();
-        getEnglishTxt().then(function(data) {
+        return getEnglishTxt().then(function(data) {
             var words = data.split('\n');
             var mapping = {};
             for (var i = 0; i < words.length; i++) {
                 mapping[words[i]] = i;
             }
-            deferred.resolve(mapping);
+            return mapping;
         });
-        return deferred.promise;
     };
     mnemonics.getMnemonicMap = getMnemonicMap;
     mnemonics.validateMnemonic = function(mnemonic) {
-        var deferred = $q.defer();
         var words = mnemonic.split(" ");
-        if (words.length % 3 > 0) deferred.reject("Invalid number of words");
-        getMnemonicMap().then(function(mapping) {
+        if (words.length % 3 > 0) $q.reject("Invalid number of words");
+        return getMnemonicMap().then(function(mapping) {
             var indices = [];
             for (var i = 0; i < words.length; i++) {
                 if (mapping[words[i]] === undefined) {
-                    deferred.reject("Unknown word '" + words[i] + "'");
-                    return;
+                    return $q.reject("Unknown word '" + words[i] + "'");
                 }
                 indices.push(mapping[words[i]]);
             }
@@ -49,10 +43,9 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
             while (retval.length < 33) retval.unshift(0);
             var checksum = retval.pop();
             var hash = Crypto.SHA256(retval, {asBytes: true});
-            if(hash[0] != checksum) deferred.reject('Checksum does not match');  // checksum
-            deferred.resolve(retval);
-        })
-        return deferred.promise;
+            if(hash[0] != checksum) return $q.reject('Checksum does not match');  // checksum
+            return retval;
+        });
     }
     mnemonics.fromMnemonic = function(mnemonic) {
         var bytes = mnemonics.validateMnemonic(mnemonic);
@@ -65,8 +58,7 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
         return deferred.promise;
     };
     mnemonics.toMnemonic = function(data) {
-        var deferred = $q.defer();
-        getEnglishTxt().then(function(response) {
+        return getEnglishTxt().then(function(response) {
             var words = response.split('\n');
             if(words.length != 2048) {
                 throw("Wordlist should contain 2048 words, but it contains "+words.length+" words.");
@@ -84,9 +76,8 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
                 var index = new BigInteger(binary.slice(i*11, (i+1)*11), 2);
                 mnemonic.push(words[index[0]]);
             }
-            deferred.resolve(mnemonic.join(' '));
+            return mnemonic.join(' ');
         });
-        return deferred.promise;
     }
     mnemonics.seedToPath = function(seed) {
         var shaObj = new jsSHA(seed, 'HEX');
@@ -97,7 +88,7 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
         if (!validated) {
             return that.validateMnemonic(mnemonic).then(function() {
                 return that.toSeed(mnemonic, k, true);
-            });
+            })
         }
         var deferred = $q.defer();
         k = k || 'mnemonic';
@@ -105,22 +96,22 @@ angular.module('greenWalletMnemonicsServices', ['greenWalletServices'])
         if (window.cordova) {
             cordovaReady(function() {
                 cordova.exec(function(param) {
-                        if (param.constructor === Number) {
-                            deferred.notify(param);
-                        } else {
-                            var ArrayBuffer2hex = function (buffer) {
-                                var hex = "";
-                                var view = new Uint8Array(buffer);                                  
-                                for (var i = 0; i < view.length; i++)
-                                    hex += ("00" + view[i].toString(16)).slice(-2);
-                                return hex;
-                            };
-                            var hex = ArrayBuffer2hex(param);
-                            deferred.resolve(hex);
-                        }
-                    }, function(fail) {
-                        console.log('mnemonic.toSeed failed: ' + fail)
-                    }, "BIP39", "calcSeed", [k, m]);
+                    if (param.constructor === Number) {
+                        deferred.notify(param);
+                    } else {
+                        var ArrayBuffer2hex = function (buffer) {
+                            var hex = "";
+                            var view = new Uint8Array(buffer);                                  
+                            for (var i = 0; i < view.length; i++)
+                                hex += ("00" + view[i].toString(16)).slice(-2);
+                            return hex;
+                        };
+                        var hex = ArrayBuffer2hex(param);
+                        deferred.resolve(hex);
+                    }
+                }, function(fail) {
+                    console.log('mnemonic.toSeed failed: ' + fail)
+                }, "BIP39", "calcSeed", [k, m]);
             })();
         } else {
             var worker = new Worker("/static/js/mnemonic_seed_worker.min.js");

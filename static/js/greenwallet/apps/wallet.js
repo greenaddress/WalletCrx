@@ -7,7 +7,7 @@ if (window.cordova) {
 }
 var greenWalletApp = angular.module('greenWalletApp', deps)
 .controller('SignupController', ['$scope', '$injector', '$controller', function($scope, $injector, $controller) {
-    $script('/static/js/signup.min.js', function() {
+    $script(BASE_URL+'/static/js/signup.min.js', function() {
         // injector method takes an array of modules as the first argument
         // if you want your controller to be able to use components from
         // any of your other modules, make sure you include it together with 'ng'
@@ -22,96 +22,106 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
 .config(['$routeProvider', '$provide', function config($routeProvider, $provide) {
     $routeProvider
         .when('/', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_signuplogin.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signuplogin/base.html',
             controller: 'SignupLoginController'
         })
         .when('/info', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_info.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
             controller: 'InfoController'
         })
         .when('/transactions', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_transactions.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_transactions.html',
             controller: 'TransactionsController'
         })
         .when('/receive', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_receive.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_receive.html',
             controller: 'ReceiveController'
         })
         .when('/send', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_send.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_send.html',
             controller: 'SendController'
         })
         .when('/send/:contact', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_send.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_send.html',
             controller: 'SendController'
         })
         .when('/address-book', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_address_book.html'
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_address_book.html'
             //controller: 'SettingsController'
         })
         .when('/address-book/name_:name', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_address_book.html'
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_address_book.html'
             //controller: 'SettingsController'
         })
         .when('/address-book/:page', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_address_book.html'
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_address_book.html'
             //controller: 'SettingsController'
         })
         .when('/settings', {
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_settings.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_settings.html',
             controller: 'SettingsController'
         })
         .when('/create', {
-            templateUrl: '/'+LANG+'/wallet/partials/signup_1_init.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_1_init.html',
             controller: 'SignupController'
         })
         .when('/signup_pin', {
-            templateUrl: '/'+LANG+'/wallet/partials/signup_2_pin.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_2_pin.html',
             controller: 'SignupController'
         })
         .when('/signup_oauth', {
-            templateUrl: '/'+LANG+'/wallet/partials/signup_3_oauth.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_3_oauth.html',
             controller: 'SignupController'
         })
         .when('/signup_2factor', {
-            templateUrl: '/'+LANG+'/wallet/partials/signup_4_2factor.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_4_2factor.html',
             controller: 'SignupController'
         })
         .when('/concurrent_login', {
-            templateUrl: '/'+LANG+'/wallet/partials/concurrent_login.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/concurrent_login.html',
             controller: 'SignupController'
         })
         .when('/browser_unsupported', {
-            templateUrl: '/'+LANG+'/wallet/partials/browser_unsupported.html'
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/browser_unsupported.html'
+        })
+        .when('/redeem/:enckey', {
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
+            controller: 'InfoController'
+        })
+        .when('/pay/:pay_receiver', {
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
+            controller: 'InfoController'
+        })
+        .when('/uri/', {
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
+            controller: 'InfoController'
         });
         
 }]).run(['$rootScope', function($rootScope, $location) {
     $rootScope.$location = $location;
-}]).factory("inputsWatcher", ["$interval", "$rootScope", function($interval, $rootScope){
-    var INTERVAL_MS = 500;
-    var promise;
-    var handlers = [];
-
-    function execHandlers(){
-        for(var i = 0, l = handlers.length; i < l; i++){
-            handlers[i]();
-        }
-    }
-
-    return {
-        registerInput: function registerInput(handler){
-            if(handlers.push(handler) == 1){
-                promise = $interval(execHandlers, INTERVAL_MS);
-            }
+}]).factory("backButtonHandler", function () {
+    var backButtonHandlerService = {
+        handlers: [],
+        exitAppHandler: function() {
+            navigator.app.exitApp();
         },
-        unregisterInput: function unregisterInput(handler){
-            handlers.splice(handlers.indexOf(handler), 1);
-            if(handlers.length == 0){
-                $interval.cancel(promise);
+        pushHandler: function(handler) {
+            if (this.handlers.length) {
+                document.removeEventListener("backbutton", this.handlers[this.handlers.length-1]);
+            }
+            this.handlers.push(handler);
+            document.addEventListener("backbutton", handler);
+        },
+        popHandler: function() {
+            document.removeEventListener("backbutton", this.handlers.pop());
+            if (this.handlers.length) {
+                document.addEventListener("backbutton", this.handlers[this.handlers.length-1]);
             }
         }
-    }
-}]).directive("toggleableMenu", ['$location', 'cordovaReady', function($location, cordovaReady) {
+    };
+    return backButtonHandlerService;
+}).directive("toggleableMenu", ['$location', 'cordovaReady', 'backButtonHandler',
+        function($location, cordovaReady, backButtonHandler) {
     return {
         restrict: 'A',
         controller: ['$scope', function($scope) {
@@ -119,7 +129,6 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
             if (window.cordova) {
                 var backHandler = function() {
                     $scope.toggle_set(false);
-                    document.removeEventListener("backbutton", backHandler);
                 };
                 cordovaReady(function() {
                     document.addEventListener("menubutton", function() {
@@ -144,9 +153,9 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
                 }
                 if (window.cordova) {
                     if (state) {
-                        document.addEventListener("backbutton", backHandler);
+                        backButtonHandler.pushHandler(backHandler);
                     } else {
-                        document.removeEventListener("backbutton", backHandler);
+                        backButtonHandler.popHandler();
                     }
                 }
             };

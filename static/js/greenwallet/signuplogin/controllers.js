@@ -15,7 +15,14 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
     var modal;
 
     $scope.login = function() {
-        if (use_pin_data.pin) { gaEvent('Login', 'PinLogin'); $scope.use_pin(); return; }
+        $scope.logging_in = true;
+        if (use_pin_data.pin) {
+            gaEvent('Login', 'PinLogin');
+            $scope.use_pin().finally(function() {
+                $scope.logging_in = false;
+            });
+            return;
+        }
         gaEvent('Login', 'MnemonicLogin');
         state.mnemonic_error = state.login_error = undefined;
         mnemonics.validateMnemonic(state.mnemonic).then(function() {
@@ -41,7 +48,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                     if (!state.has_pin && !state.refused_pin) {
                         gaEvent('Login', 'MnemonicLoginPinModalShown');
                         modal = $modal.open({
-                            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_pin.html',
+                            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_pin.html',
                             scope: $scope
                         });
                         modal.opened.then(function() { focus("pinModal"); });
@@ -63,6 +70,8 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         }, function(e) {
             gaEvent('Login', 'MnemonicError', e);
             state.mnemonic_error = e;
+        }).finally(function() {
+            $scope.logging_in = false;
         });
     };
     
@@ -104,13 +113,13 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             wallets.loginWatchOnly($scope, 'facebook', FB.getAuthResponse().accessToken).then(function() {
                 gaEvent('Login', 'FacebookLoginSucceeded');
             }).catch(function(e) {
-                if (e.uri == "http://greenaddressit.com/error#usernotfound") {
+                if (e && e.uri == "http://greenaddressit.com/error#usernotfound") {
                     gaEvent('Login', 'FacebookLoginRedirectedToOnboarding');
                     $scope.wallet.signup_fb_prelogged_in = true;
                     $location.path('/create');
                 } else {
-                    gaEvent('Login', 'FacebookLoginFailed', e.desc);
-                    notices.makeNotice('error', e.desc);
+                    gaEvent('Login', 'FacebookLoginFailed', e && e.desc || e);
+                    notices.makeNotice('error', e ? (e.desc || e) : gettext('Unknown error'));
                 }
             });
         });
@@ -147,7 +156,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             });
         };
         var modal = $modal.open({
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_custom_login.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_custom_login.html',
             scope: $scope
         });
         
@@ -180,7 +189,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
 
     $scope.use_pin = function(valid) {
         notices.setLoadingText("Checking PIN");
-        tx_sender.call('http://greenaddressit.com/pin/get_password', use_pin_data.pin, state.pin_ident).then(
+        return tx_sender.call('http://greenaddressit.com/pin/get_password', use_pin_data.pin, state.pin_ident).then(
             function(password) {
                 if (!password) {
                     gaEvent('Login', 'PinLoginFailed', 'empty password');
@@ -214,10 +223,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 }
             }, function(e) {
                 gaEvent('Login', 'PinLoginFailed', e.desc);
-                notices.makeNotice('error', e.desc);
-                state.login_error = true;
-            }).catch(function(e) {
-                gaEvent('Login', 'PinLoginFailed', e.desc);
+                notices.makeNotice('error', e.desc || e);
                 state.login_error = true;
             });
     }

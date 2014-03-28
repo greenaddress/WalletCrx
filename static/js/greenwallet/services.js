@@ -31,7 +31,7 @@ angular.module('greenWalletServices', [])
     var walletsService = {};
     var handle_double_login = function(retry_fun) {
         return $modal.open({
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_logout_other_session.html'
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_logout_other_session.html'
         }).result.then(function() {
             return retry_fun();
         });
@@ -39,7 +39,16 @@ angular.module('greenWalletServices', [])
     walletsService.requireWallet = function($scope, dontredirect) {
         if (!$scope.wallet.hdwallet) {
             if (!dontredirect) {
-                $location.url('/?redir=' + $location.url());
+                var location = '/?redir=' + $location.path();
+                var search = '';
+                for (var key in $location.search()) {
+                    if (i > 0) search += '&';
+                    search += key + '=' + encodeURIComponent($location.search()[key]);
+                }
+                if (search) {
+                    location += encodeURIComponent('?' + search);
+                }
+                $location.url(location);
             }
             return false;
         }
@@ -363,8 +372,7 @@ angular.module('greenWalletServices', [])
         }
         return d.promise;
     };
-    walletsService.get_two_factor_code = function($scope, gauth, ignore) {
-        if (ignore) return $q.when(null);  // used in signup to allow setting 2FA without 2FA
+    walletsService.get_two_factor_code = function($scope) {
         var deferred = $q.defer();
         walletsService.getTwoFacConfig($scope).then(function(twofac_data) {
             if (twofac_data.any) {
@@ -396,10 +404,9 @@ angular.module('greenWalletServices', [])
                             this.requesting_code = false;
                         });
                     }};
-                $scope.twofac_modal_gauth = gauth;
                 var show_modal = function() {
                     var modal = $modal.open({
-                        templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_2fa.html',
+                        templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_2fa.html',
                         scope: $scope,
                         windowClass: 'twofactor'
                     });
@@ -521,7 +528,7 @@ angular.module('greenWalletServices', [])
     walletsService.askForLogout = function($scope, text) {
         $scope.ask_for_logout_text = text;
         return $modal.open({
-            templateUrl: '/'+LANG+'/wallet/partials/wallet_modal_logout.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_logout.html',
             scope: $scope
         }).result;
     };
@@ -565,8 +572,12 @@ angular.module('greenWalletServices', [])
     ab._Deferred = $q.defer;
     var txSenderService = {};
     if (window.Electrum) {
-        txSenderService.electrum = new Electrum();
-        txSenderService.electrum.connectToServer();
+        if (window.cordova) {
+            txSenderService.electrum = new Electrum($http, $q);
+        } else {
+            txSenderService.electrum = new Electrum();
+            txSenderService.electrum.connectToServer();
+        }
     }
     var session, calls = [];
     txSenderService.call = function() {
@@ -587,7 +598,18 @@ angular.module('greenWalletServices', [])
         return d.promise;
     };
     var isMobile = /Android|iPhone|iPad|iPod|Opera Mini/i.test(navigator.userAgent);
-    if (isMobile && typeof document.addEventListener !== undefined) {
+    if (window.cordova) {
+        cordovaReady(function() {
+            document.addEventListener("resume", function() {
+                if (!txSenderService.wallet) return;
+                session.close();  // reconnect on resume
+                session = null;
+                disconnected = true;
+                txSenderService.wallet.update_balance();
+                txSenderService.wallet.refresh_transactions();
+            }, false);
+        })();        
+    } else if (isMobile && typeof document.addEventListener !== undefined) {
         // reconnect on tab shown in mobile browsers
         document.addEventListener("visibilitychange", function() {
             if (!document.hidden && txSenderService.wallet) {
@@ -600,8 +622,7 @@ angular.module('greenWalletServices', [])
         session = s;
         session.subscribe('http://greenaddressit.com/tx_notify', function(topic, event) {
             gaEvent('Wallet', 'TransactionNotification');
-            $rootScope.$broadcast('transaction', event);
-        });
+            $rootScope.$broadcast('transaction', event);        });
         session.subscribe('http://greenaddressit.com/block_count', function(topic, event) {
             $rootScope.$broadcast('block', event);
         });
@@ -856,6 +877,7 @@ angular.module('greenWalletServices', [])
     };
 
     document.addEventListener('deviceready', function () {
+      navigator.splashscreen.hide();
       queue.forEach(function (args) {
         fn.apply(args[0], args[1]);
       });
@@ -868,7 +890,7 @@ angular.module('greenWalletServices', [])
   };
 }).factory('hostname', function() {
     var is_chrome_app = window.chrome && chrome.storage;
-    if (is_chrome_app) {
+    if (is_chrome_app || window.cordova) {
         return 'greenaddress.it';
     } else {
         return window.location.hostname.replace('cordova.', '').replace('cordova-t.', '')
@@ -885,7 +907,52 @@ angular.module('greenWalletServices', [])
             } catch (e) {}
         }
     }
-}).factory('storage', ['$q', function($q) {
+}).factory('parseKeyValue', function() {
+    var tryDecodeURIComponent = function (value) {
+        try {
+            return decodeURIComponent(value);
+        } catch(e) {
+            // Ignore any invalid uri component
+        }
+    };
+    return function parseKeyValue(keyValue) {
+        var obj = {}, key_value, key;
+        angular.forEach((keyValue || "").split('&'), function(keyValue){
+            if ( keyValue ) {
+            key_value = keyValue.split('=');
+            key = tryDecodeURIComponent(key_value[0]);
+            if ( key !== undefined ) {
+                var val = (key_value[1] !== undefined) ? tryDecodeURIComponent(key_value[1]) : true;
+                if (!obj[key]) {
+                    obj[key] = val;
+                } else if(toString.call(obj[key]) === '[object Array]') {
+                    obj[key].push(val);
+                } else {
+                    obj[key] = [obj[key],val];
+                }
+            }
+        }
+      });
+      return obj;
+    };
+}).factory('parse_bitcoin_uri', ['parseKeyValue', function(parseKeyValue) {
+    return function parse_bitcoin_uri(uri) {
+        // FIXME: Should do better parsing, checking label and message too
+        if (uri.indexOf("bitcoin:") == -1) {
+            // not an URI
+            return [undefined, undefined];
+        } else {
+            if (uri.indexOf("?") == -1) {
+                // no amount
+                return [uri.split("bitcoin:")[1], undefined];
+            } else {
+                var recipient =  uri.split("bitcoin:")[1].split("?")[0];
+                var variables = parseKeyValue(uri.split('bitcoin:')[1].split('?')[1]);
+                return [recipient, variables.amount];
+            }
+        }
+    }
+}]).factory('storage', ['$q', function($q) {
     if (window.chrome && chrome.storage) {
         var noLocalStorage = false;
     } else {

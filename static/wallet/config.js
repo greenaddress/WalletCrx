@@ -5,3 +5,4 @@ var wss_url = "wss://prodwss.greenaddress.it/ws/inv";
 var root_url = "https://greenaddress.it";
 var LANG = window.location.href.split('/');
 LANG = LANG[LANG.length-2];
+var BASE_URL = '';

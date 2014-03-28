@@ -14,12 +14,14 @@ angular.module('greenWalletBaseApp', deps)
             function($q, $rootScope, $timeout, notices) {
         return {
             'request': function(config) {
+                if (config.no_loading_indicator) return config || $q.when(config);
                 if (!$rootScope.is_loading) $rootScope.is_loading = 0;
                 notices.setLoadingText('Loading', true);  // for requests without setLoadingText
                 $rootScope.is_loading += 1;
                 return config || $q.when(config);
             },
             'response': function(response) {
+                if (response.config.no_loading_indicator) return response || $q.when(response);
                 if (!$rootScope.is_loading) $rootScope.is_loading = 1;
                 $rootScope.is_loading -= 1;
                 notices.setLoadingText();  // clear it (it's one-off)
@@ -37,7 +39,9 @@ angular.module('greenWalletBaseApp', deps)
     $httpProvider.defaults.xsrfCookieName = 'csrftoken';
     $httpProvider.defaults.xsrfHeaderName = 'x-csrftoken';
 }]).config(['$compileProvider', function($compileProvider) {   
-    if (window.chrome && chrome.storage) {
+    if (window.cordova) {
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|bitcoin|data|file):/);
+    } else if (window.chrome && chrome.storage) {
         $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|bitcoin|data|chrome-extension):/);
     } else {
         $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|bitcoin|data):/);

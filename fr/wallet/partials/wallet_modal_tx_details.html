@@ -1,15 +1,23 @@
 <div class="modal-header">
-    <h3>Détails de la transaction</h3>
+    Détails de la transaction
 </div>
 
 <div class="modal-body">
-    <ul>
-        <li>Timestamp: (( selected_transaction.ts ))</li>
-        <li>Hash: (( selected_transaction.txhash ))</li>
-        <li>Frais: (( selected_transaction.fee | format_btc:wallet.unit ))</li>
+    <dl>
+        <dt>Timestamp</dt>
+        <dd>(( selected_transaction.ts ))</dd>
+
+        <dt>Hash</dt>
+        <dd>(( selected_transaction.txhash ))</dd>
+        
+        <dt>Frais</dt>
+        <dd>(( selected_transaction.fee | format_btc:wallet.unit ))</dd>
     </ul>
 
-    <h4>Entrées</h4>
+    <hr class="double">
+
+    <p style="font-size:140%;"><b>Entrées</b></p>
+
     <table class="table">
         <tr><th>Adresse</th><th>Montant</th></tr>
         <tr ng-repeat="input in selected_transaction.inputs">
@@ -18,7 +26,10 @@
         </tr>
     </table>
 
-    <h4>Sorties</h4>
+    <hr class="double">
+
+    <p style="font-size:140%;"><b>Sorties</b></p>
+
     <table class="table">
         <tr><th>Adresse</th><th>Montant</th></tr>
         <tr ng-repeat="output in selected_transaction.outputs">
