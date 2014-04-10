@@ -17,8 +17,19 @@
             </span>
             <input ng-controller="AddressBookController" ng-model="send_tx.recipient" class="form-control" type="text" id="recipient" name="recipient" placeholder="Wpisz adres bitcoin odbiorcy, jego email lub nazwę konta Facebook"
                     typeahead="item as item.name for item in addressbook.items | filter:$viewValue | limitTo:8" />
-            
-          </div>
+            <span class="input-group-btn">
+              <span class="btn btn-default" ng-hide="scanning_qr_video"><i class="glyphicon glyphicon-qrcode"></i>
+                Skanuj kod QR
+                <input style="opacity: 0; position: absolute; left: 0; top: 0; width: 100%; height: 100%" type="file" id="qrcodeinput_login" accept="image/*" capture="camera" ga-click-no-touch="send_tx.read_qr_code($event)">
+              </span>
+              <a class="btn btn-default" ng-show="scanning_qr_video" ng-click="send_tx.stop_scanning_qr_code()">Anuluj</a>
+            </span>
+          </div>  
+          
+              <input class="ng-hide" type="file" id="qrcodeinput_send" accept="image/*" capture="camera">
+              <canvas id="qr-canvas" class="ng-hide"></canvas>
+              <video ng-show="scanning_qr_video" id="v_send" autoplay style="width: 100%;"></video>
+          
         </div>
       </div>
       <div class="form-group" ng-hide="send_tx.recipient_is_btcaddr() || wallet.send_unencrypted">

@@ -9,7 +9,8 @@
         "pages": ["bip38_sandbox.html"]
     },
     "permissions": [
-        "storage"
+        "storage",
+        "videoCapture"
     ],
     "sockets": {
         "tcp":  {"connect": "*:50001"}
@@ -18,5 +19,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress.it",
-    "version": "0.0.15"
+    "version": "0.0.16"
 }
