@@ -33,7 +33,7 @@
                 <br>
                 <button class="btn btn-default btn-block-xs" ng-click="signup.qrmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-qrcode"></i> Zeige QR-Code</button>
                 
-                <button class="btn btn-default btn-block-xs" onclick="window.print(); return false;" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-print"></i> Passphrase ausdrucken</button>
+                <button tooltip="Warning: some printers store printed documents internally, so it can be insecure to print your mnemonic." class="btn btn-default btn-block-xs" onclick="window.print(); return false;" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-print"></i> Passphrase ausdrucken</button>
                 
                 <a ng-hide="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_pin#content_container">Weiter!</a>
                 <a ng-show="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_oauth#content_container">Weiter!</a>
