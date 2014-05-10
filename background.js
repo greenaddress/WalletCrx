@@ -12,7 +12,7 @@ var start = function() {
     });
     
 }
-var SUPPORTED_LANGS = ['de', 'en', 'es', 'fr', 'it', 'pl'];
+var SUPPORTED_LANGS = ['de', 'en', 'es', 'fr', 'it', 'pl', 'ru', 'uk', 'sv', 'nl', 'el'];
 chrome.app.runtime.onLaunched.addListener(function() {
     chrome.storage.local.get('language', function(items) {
         lang = items.language;
