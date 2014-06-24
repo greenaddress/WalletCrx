@@ -85,6 +85,52 @@ Electrum.SERVERS = [
   "sspc1000.homeip.net",
 ];
 
+Electrum.prototype.checkConnectionsAvailable = function() {
+  return new Promise(function(resolve, reject) {
+    var tryServer = function (name) {
+      return new Promise(function(resolve, reject) {
+        var socketId;
+
+        var onConnectComplete = function (result) {
+          if (result != 0) {
+            reject();
+          } else {
+            chrome.sockets.tcp.close(socketId);
+            resolve();
+          }
+        }
+
+        var onSocketCreate = function(socketInfo) {
+          socketId = socketInfo.socketId;
+          chrome.sockets.tcp.connect(socketInfo.socketId,
+                                     name, 50001,
+                                     onConnectComplete);
+        };
+
+        chrome.sockets.tcp.create({
+          "name": "electrum_test"
+        }, onSocketCreate);
+      });
+    };
+
+    //+ Jonas Raoni Soares Silva
+    //@ http://jsfromhell.com/array/shuffle [v1.0]
+    function shuffle(o){ //v1.0
+        for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+        return o;
+    };
+    var servers = shuffle(Electrum.SERVERS.slice(0));
+
+    var d = Promise.reject();
+    for (var i = 0; i < servers.length; i++) {
+      d = d.then(resolve, (function(i) { return function() {
+        return tryServer(servers[i]);
+      }})(i));
+    }
+    d.then(resolve, reject);
+  });
+}
+
 Electrum.prototype.issueAddressGetHistory = function(addr_b58) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.address.get_history", [addr_b58])
@@ -151,6 +197,7 @@ Electrum.prototype.isConnected = function() {
 };
 
 Electrum.prototype.onSocketReceive = function(receiveInfo) {
+  if (receiveInfo.socketId != this.socketId) return;
   arrayBuffer2String(receiveInfo.data, function(str) {
     this.stringBuffer += str;
     var isLastComplete = (this.stringBuffer.substr(-1) == "\n");
@@ -176,6 +223,7 @@ Electrum.prototype.onSocketReceive = function(receiveInfo) {
 };
 
 Electrum.prototype.onSocketReceiveError = function(receiveErrorInfo) {
+  if (receiveErrorInfo.socketId != this.socketId) return;
   logFatal("receive error", receiveErrorInfo);
   this.isSocketConnected = false;
   this.connectionStateDescription = "Not connected";

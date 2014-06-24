@@ -1,9 +1,26 @@
 <script type="text/javascript" src="/static/js/scrypt.min.js"></script>
 <script type="text/javascript" src="/static/js/bitcoinjs.min.js"></script>
+<script type="text/javascript" src="/static/js/bitcoinjs_util.min.js"></script>
 <script type="text/javascript" src="/static/js/bip38.min.js"></script>
 <script>
   window.addEventListener('message', function(event) {
     var input = event.data;
-    event.source.postMessage(bip38.encrypt({data: input.data, key: input.key}, input.salt), event.origin);
+    if (input.eckey) {
+    	event.source.postMessage(new Bitcoin.ECKey(input.eckey).getEncryptedFormat(input.password), event.origin);
+    } else if (input.mnemonic_decrypted) {
+        event.source.postMessage(bip38.encrypt({data: input.mnemonic_decrypted, key: input.password}, input.salt_a), event.origin);
+    } else if (input.mnemonic_encrypted) {
+        event.source.postMessage(bip38.decrypt({data: input.mnemonic_encrypted, key: input.password}), event.origin);
+    } else {
+    	try {
+        	event.source.postMessage(Bitcoin.ECKey.decodeEncryptedFormat(input.b58, input.password).toBytes(), event.origin);
+        } catch (e) {
+        	if (e.message.indexOf("Hash could not be verified.") != -1) {
+        		event.source.postMessage({error: 'invalid_passphrase'}, event.origin);
+        	} else {
+        		event.source.postMessage({error: 'invalid_privkey'}, event.origin);
+        	}
+        }
+    };
   });
 </script>

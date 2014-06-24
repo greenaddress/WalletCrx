@@ -1,7 +1,7 @@
 angular.module('greenWalletTransactionsControllers',
     ['greenWalletServices'])
-.controller('TransactionsController', ['$scope', 'wallets', 'tx_sender', 'notices', 'branches', '$modal', 'gaEvent',
-        function TransactionsController($scope, wallets, tx_sender, notices, branches, $modal, gaEvent) {
+.controller('TransactionsController', ['$scope', 'wallets', 'tx_sender', 'notices', 'branches', '$modal', 'gaEvent', '$timeout',
+        function TransactionsController($scope, wallets, tx_sender, notices, branches, $modal, gaEvent, $timeout) {
     if(!wallets.requireWallet($scope)) return;
 
     var limiter = {
@@ -100,6 +100,11 @@ angular.module('greenWalletTransactionsControllers',
     $scope.details = function(transaction) {
         gaEvent('Wallet', 'TransactionsTabDetailsModal');
         $scope.selected_transaction = transaction;
+        if (transaction.has_payment_request && !transaction.payment_request) {
+            tx_sender.call('http://greenaddressit.com/txs/get_payment_request', transaction.txhash).then(function(payreq_b64) {
+                transaction.payment_request = 'data:application/bitcoin-paymentrequest;base64,' + payreq_b64;
+            });
+        }
         $modal.open({
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_tx_details.html',
             scope: $scope

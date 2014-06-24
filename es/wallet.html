@@ -111,10 +111,25 @@
     
     <div id="content">
       
+<!-- angular-ui template overrides to disable animations -->
+<script id="template/modal/backdrop.html" type="text/ng-template">
+  <div class="modal-backdrop fade in "
+       ng-style="{'z-index': 1040 + (index && 1 || 0) + index*10}"
+  ></div>
+</script>
+<script id="template/modal/window.html" type="text/ng-template">
+  <div tabindex="-1" role="dialog" class="modal fade in (( windowClass ))" ng-style="{'z-index': 1050 + index*10, display: 'block'}" ng-click="close($event)">
+      <div class="modal-dialog" ng-class="{'modal-sm': size == 'sm', 'modal-lg': size == 'lg'}"><div class="modal-content" ng-transclude></div></div>
+  </div>
+</script>
 
 <div ng-controller="WalletController" id="content_container">
-  <div ng-show="wallet.hdwallet.pub && !wallet.hidden && is_loading" ng-cloak>
-    <div id="loading"><div class="spin"></div></div>
+  <div ng-show="(wallet.hdwallet.pub || wallet.trezor_dev) && !wallet.hidden && is_loading" ng-cloak>
+    
+<div id="loading">
+    <div class="spin"></div>
+</div>
+
   </div>
   <div ng-repeat="notice in notices" class="notice notice-((notice.type))" ng-cloak>
     <i class="glyphicon glyphicon-exclamation-sign" ng-show="notice.type == 'error'"></i>
@@ -125,7 +140,8 @@
   <div class="menu-mobile" toggle-class="visible">
     <i class="menu-mobile-toggle menu-mobile-toggle-open glyphicon glyphicon-align-justify" toggle-class="visible" ng-click="toggle_set(true)"></i>
     <i class="menu-mobile-toggle menu-mobile-toggle-close glyphicon glyphicon-remove" toggle-class="visible" ng-click="toggle_set(false)"></i>
-    <small>(( subpage_title ))</small> <small ng-show="wallet.final_balance" ng-cloak >((wallet.final_balance|format_btc:wallet.unit)) </small> 
+    <small>(( subpage_title ))</small> <small ng-click="wallet.toggle_balance_title()" ng-show="!wallet.show_fiat && wallet.final_balance" ng-cloak >((wallet.final_balance|format_btc:wallet.unit)) </small> <small ng-show="wallet.show_fiat && wallet.fiat_value" ng-click="wallet.toggle_balance_title()" ng-cloak >((wallet.fiat_value|number:2)) ((wallet.fiat_currency)) </small> 
+
   </div>
   <div class="container" toggle-class="visible"><div class="ng-view"></div></div>
   <div class="menu" toggle-class="visible">
@@ -133,14 +149,14 @@
     <li class="menu-header"><img src="/static/img/logos/logo-greenaddress-white.png" alt="GreenAddress.it" /> GreenAddress.it</li>
     <li path="/info"><a href="#/info">Balance</a></li>
     <li path="/transactions"><a href="#/transactions">Transacciones</a></li>
-    <li ng-show="wallet.hdwallet.priv" path="/send"><a href="#/send">Enviar Dinero</a></li>
+    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev" path="/send"><a href="#/send">Enviar Dinero</a></li>
     <li path="/receive"><a href="#/receive">Recibir Dinero</a></li>
     <li path="/address-book"><a href="#/address-book">Libreta de Direcciones</a></li>
-    <li ng-show="wallet.hdwallet.priv" path="/settings" class="menu-settings"><a href="#/settings">Configuración</a></li>
+    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev" path="/settings" class="menu-settings"><a href="#/settings">Configuración</a></li>
     <li><a href="" ng-click="update_now()" ng-show="update_available">Actualizar</a></li>
     <li><a href="" ng-click="logout()">Cerrar sesión</a></li>
-    <li class="menu-balance visible-xs"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) / ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
-    <li class="menu-balance visible-sm"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) / ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
+    <li class="menu-balance visible-xs"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) <br><i class="glyphicon glyphicon-stats"></i> ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
+    <li class="menu-balance visible-sm"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) <br><i class="glyphicon glyphicon-stats"></i> ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>
   </ul>
   <div class="menu-footer">
     
