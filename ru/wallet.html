@@ -1,46 +1,46 @@
 <!doctype html>
 <html style="overflow-y: scroll;" toggleable-menu ng-swipe-left="toggle_set(false)" ng-swipe-right="toggle_set(true)" ng-app="greenWalletApp" lang="ru"  ng-csp>
   <head>
-    <title>Кошелек | GreenAddress.it</title>
-    <meta charset="utf-8">
-    <meta name="description" content="Безопасный Bitcoin кошелек, который ставит вас в управлении.">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge"> 
+    <title>Кошелек | GreenAddress</title>
+    <meta charset="utf-8" />
+    <meta name="description" content="Безопасный Bitcoin кошелек, который ставит вас в управлении." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" /> 
     <meta property="og:image" content="https://localhost/static/img/logos/logo-greenaddress.png" />
     <!--[if IE 7]>
         <script>
             window.location.href = "/wallet/#/browser_unsupported";
         </script>
     <![endif]-->
-    <link rel="shortcut icon" href="/static/img/favicons/favicon.ico">
-    <link rel="apple-touch-icon" sizes="57x57" href="/static/img/favicons/apple-touch-icon-57x57.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/static/img/favicons/apple-touch-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/static/img/favicons/apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/static/img/favicons/apple-touch-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/static/img/favicons/apple-touch-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/static/img/favicons/apple-touch-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/static/img/favicons/apple-touch-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/static/img/favicons/apple-touch-icon-152x152.png">
-    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-196x196.png" sizes="196x196">
-    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-160x160.png" sizes="160x160">
-    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-96x96.png" sizes="96x96">
-    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-32x32.png" sizes="32x32">
-    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-16x16.png" sizes="16x16">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="msapplication-TileColor" content="#ffffff">
-    <meta name="msapplication-TileImage" content="/static/img/favicons/mstile-144x144.png">
-    <meta name="msapplication-square70x70logo" content="/static/img/favicons/mstile-70x70.png">
-    <meta name="msapplication-square144x144logo" content="/static/img/favicons/mstile-144x144.png">
-    <meta name="msapplication-square150x150logo" content="/static/img/favicons/mstile-150x150.png">
-    <meta name="msapplication-square310x310logo" content="/static/img/favicons/mstile-310x310.png">
-    <meta name="msapplication-wide310x150logo" content="/static/img/favicons/mstile-310x150.png">
-    <link href="/static/css/greenaddress.css" rel="stylesheet">
+    <link rel="shortcut icon" href="/static/img/favicons/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="57x57" href="/static/img/favicons/apple-touch-icon-57x57.png" />
+    <link rel="apple-touch-icon" sizes="114x114" href="/static/img/favicons/apple-touch-icon-114x114.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="/static/img/favicons/apple-touch-icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="/static/img/favicons/apple-touch-icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="60x60" href="/static/img/favicons/apple-touch-icon-60x60.png" />
+    <link rel="apple-touch-icon" sizes="120x120" href="/static/img/favicons/apple-touch-icon-120x120.png" />
+    <link rel="apple-touch-icon" sizes="76x76" href="/static/img/favicons/apple-touch-icon-76x76.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/static/img/favicons/apple-touch-icon-152x152.png" />
+    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-196x196.png" sizes="196x196" />
+    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-160x160.png" sizes="160x160" />
+    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/static/img/favicons/favicon-16x16.png" sizes="16x16" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="msapplication-TileColor" content="#ffffff" />
+    <meta name="msapplication-TileImage" content="/static/img/favicons/mstile-144x144.png" />
+    <meta name="msapplication-square70x70logo" content="/static/img/favicons/mstile-70x70.png" />
+    <meta name="msapplication-square144x144logo" content="/static/img/favicons/mstile-144x144.png" />
+    <meta name="msapplication-square150x150logo" content="/static/img/favicons/mstile-150x150.png" />
+    <meta name="msapplication-square310x310logo" content="/static/img/favicons/mstile-310x310.png" />
+    <meta name="msapplication-wide310x150logo" content="/static/img/favicons/mstile-310x150.png" />
+    <link href="/static/css/greenaddress.css" rel="stylesheet" />
     
     
     <script src="/static/wallet/config.js"></script>
     <script src="/ru/i18n_catalog.js"></script>
     
-  <link href="/static/css/dc.min.css" rel="stylesheet">
+  <link href="/static/css/dc.min.css" rel="stylesheet" />
 
 
 <script type="text/javascript" src="/static/js/script.min.js"></script>
@@ -108,6 +108,7 @@
     
   </head>
   <body id="wallet">
+    <div id="fb-root"></div>
     
     <div id="content">
       
@@ -140,15 +141,25 @@
   <div class="menu-mobile" toggle-class="visible">
     <i class="menu-mobile-toggle menu-mobile-toggle-open glyphicon glyphicon-align-justify" toggle-class="visible" ng-click="toggle_set(true)"></i>
     <i class="menu-mobile-toggle menu-mobile-toggle-close glyphicon glyphicon-remove" toggle-class="visible" ng-click="toggle_set(false)"></i>
-    <small>(( subpage_title ))</small> <small ng-click="wallet.toggle_balance_title()" ng-show="!wallet.show_fiat && wallet.final_balance" ng-cloak >((wallet.final_balance|format_btc:wallet.unit)) </small> <small ng-show="wallet.show_fiat && wallet.fiat_value" ng-click="wallet.toggle_balance_title()" ng-cloak >((wallet.fiat_value|number:2)) ((wallet.fiat_currency)) </small> 
+    <small>(( subpage_title ))</small>
+    <small ng-click="wallet.toggle_balance_title()" ng-show="!wallet.show_fiat && wallet.final_balance" ng-cloak> <a href="" x-apple-data-detectors="false">((wallet.final_balance|format_btc:wallet.unit))</a>
+    </small>
+    <small ng-show="wallet.show_fiat && wallet.fiat_value" ng-click="wallet.toggle_balance_title()" ng-cloak>
+     <a href="" x-apple-data-detectors="false">((wallet.fiat_value|number:2))</a> ((wallet.fiat_currency))
+    </small> 
 
   </div>
-  <div class="container" toggle-class="visible"><div class="ng-view"></div></div>
+  <div class="container" toggle-class="visible">
+  <p ng-show="wallet.twofac && !wallet.twofac.any"><span class="label label-warning">WARNING:</span> You have no two factor authentication set up. Please set it up in <a href="#/settings">settings</a>.</p>
+  <p ng-show="wallet.hdwallet.priv && !wallet.appearance.mnemonic_verified"><span class="label label-warning">WARNING:</span>
+    You have not verified that you have backed up your mnemonic.
+    <a href="" ng-click="verify_mnemonic()">Please verify now by clicking here.</a>
+  </p>
+  <div class="ng-view"></div></div>
   <div class="menu" toggle-class="visible">
   <ul>
-    <li class="menu-header"><img src="/static/img/logos/logo-greenaddress-white.png" alt="GreenAddress.it" /> GreenAddress.it</li>
-    <li path="/info"><a href="#/info">Баланс</a></li>
-    <li path="/transactions"><a href="#/transactions">Транзакции</a></li>
+    <li class="menu-header"><img src="/static/img/logos/logo-greenaddress-white.png" alt="GreenAddress" /> GreenAddress</li>
+    <li path="/info"><a href="#/info">Транзакции</a></li>
     <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev" path="/send"><a href="#/send">Послать денежные средства</a></li>
     <li path="/receive"><a href="#/receive">Получить денежные средства</a></li>
     <li path="/address-book"><a href="#/address-book">Aдресная книга</a></li>
@@ -169,7 +180,7 @@
       <span ng-show="wallet.last_login.country">(страна: ((wallet.last_login.country)))</span>
       <span ng-hide="wallet.last_login.country">(страна не указана)</span>
     </div>
-    <div><b>Copyright &copy; GreenAddress.it 2014</b></div>
+    <div><b>Copyright &copy; GreenAddress 2014</b></div>
   </div>
 </div>
 </div>

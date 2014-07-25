@@ -1,8 +1,9 @@
 angular.module('greenWalletTransactionsControllers',
     ['greenWalletServices'])
-.controller('TransactionsController', ['$scope', 'wallets', 'tx_sender', 'notices', 'branches', '$modal', 'gaEvent', '$timeout',
-        function TransactionsController($scope, wallets, tx_sender, notices, branches, $modal, gaEvent, $timeout) {
-    if(!wallets.requireWallet($scope)) return;
+.controller('TransactionsController', ['$scope', 'wallets', 'tx_sender', 'notices', 'branches', '$modal', 'gaEvent', '$timeout', '$q', 'encode_key', 'hostname',
+        function TransactionsController($scope, wallets, tx_sender, notices, branches, $modal, gaEvent, $timeout, $q, encode_key, hostname) {
+    // required already by InfoController
+    // if(!wallets.requireWallet($scope)) return;
 
     var limiter = {
         cur_limit: ['10'],
@@ -40,27 +41,44 @@ angular.module('greenWalletTransactionsControllers',
         limiter.redo();
     });
 
-    $scope.redeem = function(transaction) {
+    var _redeem = function(transaction) {
         gaEvent('Wallet', 'TransactionsTabRedeem');
         var key = tx_sender.hdwallet;
-        key = key.derivePrivate(branches.EXTERNAL);
-        key = key.derivePrivate(transaction.pubkey_pointer);
-        tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social",
-                key.pub.toBytes(), false).then(function(data) {
-            data.prev_outputs = [];
-            for (var i = 0; i < data.prevout_scripts.length; i++) {
-                data.prev_outputs.push(
-                    {branch: branches.EXTERNAL, pointer: transaction.pubkey_pointer,
-                     script: data.prevout_scripts[i]})
-            }
-            // TODO: verify
-            wallets.sign_and_send_tx(undefined, data, true);  // priv_der=true
-        }, function(error) {
-            gaEvent('Wallet', 'TransactionsTabRedeemFailed', error.desc);
-            notices.makeNotice('error', error.desc);
+        key = $q.when(key.derivePrivate(branches.EXTERNAL));
+        key = key.then(function(key) {
+            return key.derivePrivate(transaction.pubkey_pointer);
+        });
+        return key.then(function(key) {
+            return tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social",
+                    key.pub.toBytes(), false).then(function(data) {
+                data.prev_outputs = [];
+                for (var i = 0; i < data.prevout_scripts.length; i++) {
+                    data.prev_outputs.push(
+                        {branch: branches.EXTERNAL, pointer: transaction.pubkey_pointer,
+                         script: data.prevout_scripts[i]})
+                }
+                // TODO: verify
+                return wallets.sign_and_send_tx(undefined, data, true);  // priv_der=true
+            }, function(error) {
+                gaEvent('Wallet', 'TransactionsTabRedeemFailed', error.desc);
+                notices.makeNotice('error', error.desc);
+                return $q.reject(error);
+            });
         });
     };
-
+    $scope.redeem = function(transaction) {
+        $scope.redeem_transaction = transaction;
+        $scope._redeem = function() {
+            $scope.redeeming = true;
+            _redeem(transaction).then(modal.close).finally(function() {
+                $scope.redeeming = false;
+            });
+        }
+        var modal = $modal.open({
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_tx_redeem.html',
+            scope: $scope
+        });
+    }
     $scope.generate_nlocktime = function(transaction, output) {
         wallets.get_two_factor_code($scope).then(function(twofactor_data) {
             tx_sender.call("http://greenaddressit.com/vault/prepare_nlocktime",
@@ -109,6 +127,53 @@ angular.module('greenWalletTransactionsControllers',
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_tx_details.html',
             scope: $scope
         })
+    };
+
+    $scope.show_voucher = function(transaction, passphrase) {
+        return $q.when($scope.wallet.hdwallet.derivePrivate(branches.EXTERNAL)).then(function(key) {
+            return $q.when(key.derivePrivate(transaction.pubkey_pointer)).then(function(key) {
+                return encode_key(key, passphrase).then(function(enckey) {
+                    $scope.voucher = {
+                        encrypted: !!passphrase,
+                        enckey: enckey,
+                        satoshis: transaction.social_value,
+                        url: 'https://' + hostname + '/redeem/?amount=' + transaction.social_value + '#/redeem/' + enckey,
+                        text: transaction.social_destination.text
+                    };
+                    $modal.open({
+                        templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_voucher.html',
+                        scope: $scope
+                    });
+                });
+            });
+        });
+    };
+
+    $scope.show_encrypted_voucher = function(transaction) {
+        $scope.encrypting_voucher = true;
+        $scope.encrypt_password_modal = {
+            encrypt: function() {
+                this.error = undefined;
+                if (!this.password) {
+                    this.error = gettext('Please provide a password.');
+                    return;
+                }
+                if (this.password != this.password_repeated) {
+                    this.error = gettext('Passwords do not match.');
+                    return;
+                }
+                var that = this;
+                this.encrypting = true;
+                $scope.show_voucher(transaction, this.password).then(function() {
+                    that.encrypting = false;
+                    modal.close();
+                });
+            }
+        }
+        var modal = $modal.open({
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signuplogin/modal_encryption_password.html',
+            scope: $scope
+        });
     };
 
 }]);

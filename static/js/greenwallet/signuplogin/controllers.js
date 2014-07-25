@@ -1,6 +1,6 @@
 angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServices'])
-.controller('SignupLoginController', ['$scope', '$modal', 'focus', 'wallets', 'notices', 'mnemonics', '$location', 'cordovaReady', 'facebook', 'tx_sender', 'crypto', 'gaEvent', 'reddit', 'storage', 'qrcode', 'vibration', '$timeout', '$q', 'trezor', 'bip38',
-        function SignupLoginController($scope, $modal, focus, wallets, notices, mnemonics, $location, cordovaReady, facebook, tx_sender, crypto, gaEvent, reddit, storage, qrcode, vibration, $timeout, $q, trezor, bip38) {
+.controller('SignupLoginController', ['$scope', '$modal', 'focus', 'wallets', 'notices', 'mnemonics', '$location', 'cordovaReady', 'facebook', 'tx_sender', 'crypto', 'gaEvent', 'reddit', 'storage', 'qrcode', '$timeout', '$q', 'trezor', 'bip38',
+        function SignupLoginController($scope, $modal, focus, wallets, notices, mnemonics, $location, cordovaReady, facebook, tx_sender, crypto, gaEvent, reddit, storage, qrcode, $timeout, $q, trezor, bip38) {
 
     if (window.GlobalWalletControllerInitVars) {
         // in case user goes back from send to login and back to send, we want to display the
@@ -26,6 +26,20 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 }
             }
         });
+
+        if (state.has_pin && window.cordova && cordova.platformId == 'android') {
+            cordovaReady(function() {
+                cordova.exec(function(data) {
+                    $scope.$apply(function() {
+                        use_pin_data.pin = data;
+                        $scope.logging_in = true;
+                        $scope.use_pin();
+                    });
+                }, function(fail) {
+                    state.toggleshowpin = true;
+                }, "PINInput", "show_input", []);
+            })();
+        }
     });
     if ($scope.wallet) {
         $scope.wallet.signup = false;  // clear signup state
@@ -74,9 +88,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             return;
         }
 
-        vibration.vibrate(250);
         $scope.logging_in = true;
-
 
         if (use_pin_data.pin) {
             gaEvent('Login', 'PinLogin');
@@ -274,7 +286,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 notices.makeNotice('success', gettext('PIN correct'));
                 tx_sender.pin_ident = state.pin_ident;
                 tx_sender.pin = use_pin_data.pin;
-                crypto.decrypt(state.encrypted_seed, password).then(function(decoded) {
+                return crypto.decrypt(state.encrypted_seed, password).then(function(decoded) {
                     if(decoded && JSON.parse(decoded).seed) {
                         gaEvent('Login', 'PinLoginSucceeded');
                         var parsed = JSON.parse(decoded);

@@ -56,24 +56,6 @@
   </div>
 </div>
 <hr class="double">
-<div class="row" ng-controller="VibrationController">
-  <div class="col-md-3">
-    <div class="sub-header">Vibrate</div>
-    <div class="sub-header-desc">Enable or disable vibrations on mobile devices</div>
-  </div>
-  <div class="col-md-9" submittable>
-    <form role="form" class="form-horizontal">
-        <div class="form-group">
-            <label class="switch col-sm-3">
-                <input type="checkbox" class="switch" ng-model="wallet.appearance.vibrate"/>
-                <span class="switch"></span>
-                Enable vibrations
-            </label>
-        </div>
-    </form>
-  </div>
-</div>
-<hr class="double">
 <div class="row">
   <div class="col-md-3">
     <div class="sub-header">Language</div>
@@ -136,6 +118,9 @@
                 </div>
             </div>
           </form>
+          <div class="row"><div class="col-sm-12">
+            <p>The code is valid only for 5 minutes, so you can request another one if necessary. <a href="" ng-click="set_new_email()" class="btn btn-info btn-xs" ng-class="{disabled: settings.setting_email}">Request another code</a></p>
+          </div></div>
       </div>
   </div>
 </div>
@@ -158,8 +143,8 @@
           <label ng-show="quicklogin.enabled" class="control-label col-sm-3">PIN-Nummer ändern</label>
           <label ng-hide="quicklogin.enabled" class="control-label col-sm-3">PIN-Nummer setzen</label>
           <div class="col-sm-4">
-            <input type="tel" inputmode="numeric" class="form-control" placeholder="Vierstellige Zahl"
-                   maxlength="4" pattern="[0-9]{4}" ng-pattern="/[0-9]{4}/" ng-model="quicklogin.new_pin"/>
+            <input type="tel" inputmode="numeric" class="form-control" placeholder="4-15 digits number"
+                   maxlength="15" pattern="[0-9]{4,15}" ng-pattern="/[0-9]{4,15}/" ng-model="quicklogin.new_pin"/>
             <input type="submit" class="btn btn-primary" ng-show="quicklogin.new_pin" value="Bestätigen" ng-disabled="quicklogin.setting_pin" />
           </div>
         </div>
@@ -201,7 +186,6 @@
         <input class="form-control" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" type="password" ng-model="thirdparty.customstate.password" placeholder="Passwort" />
         <input type="submit" class="btn btn-sm btn-default" value="(( thirdparty.customstate.save_button_label ))" ng-show="thirdparty.customstate.username && thirdparty.customstate.password" ng-disabled="thirdparty.toggling_custom && thirdparty.toggling_custom!='initial'" ng-click="thirdparty.customstate.save()" />
       </div>
-    
     </form>
   </div>
 </div>
@@ -445,13 +429,13 @@
 <div class="row">
   <div class="col-md-3">
     <div class="sub-header">nLockTime</div>
-    <div class="sub-header-desc">nLockTime-Transaktionen erlauben es Ihnen, Ihre Einlagen nach einer im Voraus festgelegten Zeit auch ohne GreenAddress.it's Signatur zurückzuerhalten</div>
+    <div class="sub-header-desc">nLockTime transactions allow you to redeem your deposited funds without GreenAddress' signature after pre-defined number of blocks</div>
   </div>
   <div class="col-md-9">
     <form role="form" class="form-inline" ng-submit="settings.nlocktime.update()">
       <div class="form-group">
         <div ng-class="{grayedout: !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac.email_confirmed}">
-          <label for="id_nlocktime_blocks" class="control-label">Guthaben einlösbar ohne Signatur von GreenAddress.it nach</label>
+          <label for="id_nlocktime_blocks" class="control-label">Allow redeeming funds without GreenAddress' signature after</label>
           <input class="form-control" type="tel" ng-model="settings.nlocktime.blocks_new" ng-disabled="settings.nlocktime.updating_nlocktime_blocks || !settings.notifications.email_incoming || !settings.notifications.email_outgoing || !wallet.twofac.email_confirmed" />
           Blöcken
           <input type="submit" class="btn btn-sm btn-default" value="Save" ng-show="settings.nlocktime.blocks_new != settings.nlocktime.blocks" ng-disabled="settings.nlocktime.updating_nlocktime_blocks"  />
@@ -480,8 +464,8 @@
       <div class="form-group">
         <label class="col-sm-3 control-label">Limit currency</label>
         <div class="col-sm-7">
-          <span class="form-control" value="BTC" ng-show="!wallet.limits.is_fiat">(( wallet.unit ))</span>
-          <span class="form-control" value="fiat" ng-show="wallet.limits.is_fiat">(( wallet.fiat_currency)) (current currency)</span>
+          <span class="form-control form-control-noinput" value="BTC" ng-show="!wallet.limits.is_fiat">(( wallet.unit ))</span>
+          <span class="form-control form-control-noinput" value="fiat" ng-show="wallet.limits.is_fiat">(( wallet.fiat_currency)) (current currency)</span>
           <small ng-show="wallet.limits.is_fiat" class="label label-warning" style="white-space: normal"><strong>HINWEIS</strong>: Using currency values for limits assumes you can trust your pricing source to provide correct values.</small>
         </div>
       </div>
@@ -494,7 +478,7 @@
       <div class="form-group">
         <label class="col-sm-3 control-label">Total</label>
         <div class="col-sm-7">
-          <span class="form-control">((wallet.limits.total|format_btc:wallet.limits.is_fiat?wallet.fiat_currency:wallet.unit))</span>
+          <span class="form-control form-control-noinput">((wallet.limits.total|format_btc:wallet.limits.is_fiat?wallet.fiat_currency:wallet.unit))</span>
           <small>This limit will be decreased with each transaction and you will need to "refill" it manually by changing this value.</small>
         </div>
       </div>
@@ -504,6 +488,7 @@
     </div>
   </div>
 </div>
+<!--
 <hr class="double">
 <div class="row">
   <div class="col-md-3">
@@ -520,7 +505,6 @@
             <span class="coming-soon">Kommt bald</span>
           </span>
       </label>
-      <!--
       <hr>
       <div class="form-group">
         <label class="control-label col-sm-3">Verzögere Zahlungen über</label>
@@ -534,10 +518,10 @@
           </select>
         </div>
       </div>
-      -->
     </form>
   </div>
 </div>
+-->
 <hr class="double">
 <div class="row">
   <div class="col-md-3">

@@ -57,7 +57,7 @@ angular.module('greenWalletReceiveControllers',
                     invalid_passphrase: gettext('Invalid passphrase')
                 };
                 var is_chrome_app = window.chrome && chrome.storage;
-                if (window.cordova && cordova.platformId == 'android') {
+                if (window.cordova) {
                     cordovaReady(function() {
                         cordova.exec(function(data) {
                             $scope.$apply(function() {
@@ -65,7 +65,7 @@ angular.module('greenWalletReceiveControllers',
                             });
                         }, function(fail) {
                             that.sweeping = false;
-                            notices.makeNotice('error', errors[fail] || message.data.error);
+                            notices.makeNotice('error', errors[fail] || fail);
                         }, "BIP38", "decrypt", [key_wif, that.bip38_password,
                                 'BTC']);  // probably not correct for testnet, but simpler, and compatible with our JS impl
                     })();

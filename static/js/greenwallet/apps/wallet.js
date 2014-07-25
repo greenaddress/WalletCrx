@@ -36,12 +36,8 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
             controller: 'SignupLoginController'
         })
         .when('/info', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
-            controller: 'InfoController'
-        })
-        .when('/transactions', {
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_transactions.html',
-            controller: 'TransactionsController'
+            controller: 'InfoController'
         })
         .when('/receive', {
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_receive.html',
@@ -79,20 +75,20 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_1_init.html',
             controller: 'SignupController'
         })
+        .when('/signup_2factor', {
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_2_2factor.html',
+            controller: 'SignupController'
+        })
         .when('/signup_pin', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_2_pin.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_3_pin.html',
             controller: 'SignupController'
         })
         .when('/signup_oauth', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_3_oauth.html',
-            controller: 'SignupController'
-        })
-        .when('/signup_2factor', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_4_2factor.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_4_oauth.html',
             controller: 'SignupController'
         })
         .when('/trezor_signup', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_2_trezor.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/signup_1_trezor.html',
             controller: 'SignupController'
         })
         .when('/concurrent_login', {
@@ -103,7 +99,7 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
             templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/browser_unsupported.html'
         })
         .when('/redeem/:enckey', {
-            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_info.html',
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_transactions.html',
             controller: 'InfoController'
         })
         .when('/pay/:pay_receiver', {
@@ -135,8 +131,8 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
         }
     };
     return backButtonHandlerService;
-}).directive("toggleableMenu", ['$location', 'cordovaReady', 'backButtonHandler', 'vibration',
-        function($location, cordovaReady, backButtonHandler, vibration) {
+}).directive("toggleableMenu", ['$location', 'cordovaReady', 'backButtonHandler',
+        function($location, cordovaReady, backButtonHandler) {
     return {
         restrict: 'A',
         controller: ['$scope', function($scope) {
@@ -157,7 +153,6 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
             };
             $scope.toggle_set = function(enable) {
                 if ($location.path() == '/') return;  // don't allow swiping menu on login page
-                vibration.vibrate(50);
                 if (state == enable) return;
                 state = enable;
                 for (var i = 0 ; i < toggleClasses.length; ++i) {
@@ -192,7 +187,6 @@ var greenWalletApp = angular.module('greenWalletApp', deps)
                             (a.parent().attr('path') == '/send' && newValue.indexOf('/pay/') != -1) ||
                             (a.parent().attr('path') == '/info' && newValue.indexOf('/redeem/') != -1)) {
                             scope.subpage_title = a.text();
-                            vibration.vibrate(50);
                             a.parent().addClass('selected');
                         } else {
                             a.parent().removeClass('selected');

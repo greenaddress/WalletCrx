@@ -126,7 +126,6 @@ if (self.cordova && cordova.platformId == 'ios') {
         var usePriv = i >= Bitcoin.HDWallet.HIGHEST_BIT
 
         if (usePriv) {
-            assert(this.priv, 'Private derive on public key')
             i -= Bitcoin.HDWallet.HIGHEST_BIT;
         }
 

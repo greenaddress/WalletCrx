@@ -23,7 +23,7 @@
                 <div class="mnemonic-label ng-cloak" ng-show="signup.mnemonic && signup.mnemonic_encrypted">Your <strong>encrypted</strong> mnemonic passphrase</div>
                 <div class="mnemonic info ng-cloak" ng-bind="signup.mnemonic_encrypted || signup.mnemonic" ng-show="signup.mnemonic_encrypted || signup.mnemonic"></div>
                 <div class="mnemonic info" ng-hide="signup.mnemonic">Генерируем мнемонику, пожалуйста подождите</div>
-                <div ng-hide="signup.mnemonic_encrypted" class="row"><div class="col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2 col-xs-12">
+                <div ng-hide="signup.mnemonic_encrypted || cordova_platform=='ios'" class="row"><div class="col-md-6 col-md-offset-3 col-sm-8 col-sm-offset-2 col-xs-12">
                     <a class="col-xs-12 btn btn-large btn-success" ng-class="{disabled: !signup.mnemonic}" ng-click="signup.encrypt_mnemonic()"><i class="glyphicon glyphicon-lock"></i>Click to encrypt your mnemonic</a>
                 </div></div>
                 <hr>
@@ -32,15 +32,17 @@
 
             <div class="create-modal-footer" ng-hide="signup.unexpected_error">
                 <label for="checkbox-confirmation">
-                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Я подтверждаю, что моя фраза-пароль сохранена в безопасном месте, и я согласен (согласна) с <a href="/tos" target="_blank">Условия предоставления услуг</a>
+                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Я подтверждаю, что моя фраза-пароль сохранена в безопасном месте, и я согласен (согласна) с 
+                    
+                    <a href="/tos" target="_blank">Условия предоставления услуг</a>
+                    
                 </label>
                 <br>
                 <button class="btn btn-default btn-block-xs" ng-click="signup.qrmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-qrcode"></i> Показать QR код</button>
                 
                 <button tooltip="Внимание: некоторые принтеры хранят документы внутри, поэтому печать Вашей мнемоники может быть небезопасной." class="btn btn-default btn-block-xs" onclick="window.print(); return false;" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-print"></i> Напечатать фразу доступа</button>
                 
-                <a ng-hide="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_pin#content_container">Продолжить!</a>
-                <a ng-show="signup.noLocalStorage" class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_oauth#content_container">Продолжить!</a>
+                <a class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_2factor#content_container">Продолжить!</a>
             </div>
 
             <div class="create-modal-footer" ng-show="signup.unexpected_error">
@@ -56,7 +58,7 @@
 
 
 <div class="printable">
-    <h1><img src="/static/img/logos/logo-greenaddress.png" alt="GreenAddres.it"> GreenAddress.it<br><small>https://greenaddress.it</small></h1>
+    <h1><img src="/static/img/logos/logo-greenaddress.png" alt="GreenAddress"> GreenAddress<br><small>https://greenaddress.it</small></h1>
     <p>Фраза доступа к вашему кошельку:</p>
     <div class="mnemonic noanimate">(( signup.mnemonic_encrypted || signup.mnemonic ))</div>
     <p ng-if="signup.mnemonic_encrypted">This passphrase is encrypted, so<br/> your encryption password is required to use it.</p>
