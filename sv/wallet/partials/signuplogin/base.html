@@ -42,7 +42,7 @@
                                 
                                 <span class="help-block" ng-show="state.mnemonic_error"><i class="glyphicon glyphicon-info-sign"></i> Ogiltig mnemonisk fras: (( state.mnemonic_error ))</span>
                             </div>
-                            <button type="submit" tabindex="4" ng-disabled="(is_loading || logging_in || (state.seed_progress && !state.login_error) || payreq_loading) && state.mnemonic"
+                            <button type="submit" tabindex="4" ng-disabled="(is_loading || logging_in || (state.seed_progress && !state.login_error) || payreq_loading)"
                                     class="btn login-submit" ng-class="{'btn-primary': !state.login_error, 'btn-danger': state.login_error}"
                                     href="#" id="restore-wallet-continue" ng-show="state.toggleshowpin" ng-focus="submit_me()">
                                 <span ng-hide="state.seed_progress || state.login_error">Logga in på din plånbok</span>
@@ -77,8 +77,18 @@
                         <hr>
                         <div class="subtitle">Logga in på övervakningsläge</div>
                         
-                        <a href="" ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Anpassad inloggning</a>
+                        <a href="" ng-class="{disabled: logging_in}" ng-click="login_with_custom()" class="btn btn-default"><i class="glyphicon glyphicon-lock"></i> Anpassad inloggning</a>
                     </div>
+
+                    <div ng-show="state.hw_detected">
+                        <hr>
+                        <div class="subtitle">Log in via hardware wallet</div>
+                        <a ng-class="{disabled: logging_in}" href="" ng-click="login_with_hw()" class="btn btn-default"><i class="glyphicon glyphicon-transfer"></i>
+                        <span ng-hide="logging_in">BTChip Login</span>
+                        <span ng-show="logging_in">Logging in, please wait...</span>
+                        </a>
+                    </div>
+
                 </form>
             </div>
         </div>

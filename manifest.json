@@ -10,7 +10,12 @@
     },
     "permissions": [
         "storage",
-        "videoCapture"
+        "videoCapture",
+        "usb",
+        {"usbDevices": [
+            {"vendorId": 9601,
+             "productId": 7036}
+        ]}
     ],
     "sockets": {
         "tcp":  {"connect": "*:50001"}
@@ -19,5 +24,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress.it",
-    "version": "0.0.31"
+    "version": "0.0.32"
 }

@@ -413,8 +413,8 @@
     </form>
   </div>
 </div>
-<hr class="double">
-<div class="row">
+<div class="row" ng-show="wallet.hdwallet.priv">
+  <hr class="double">
   <div class="col-md-3">
       <div class="sub-header">Show mnemonic</div>
     <div class="sub-header-desc">Display your mnemonic for account recovery or cloning on another device.</div>
@@ -422,6 +422,9 @@
   <div class="col-md-9">
     <button class="btn btn-warning btn-block-xs" ng-click="show_mnemonic()"><i class="glyphicon glyphicon-eye-open"></i> Show mnemonic</button>
     <button class="btn btn-success btn-block-xs" ng-click="show_encrypted_mnemonic()"><i class="glyphicon glyphicon-lock"></i> Show encrypted mnemonic</button>
+    
+    
+    <button class="btn btn-default btn-block-xs" ng-click="settings.usbmodal()"><i class="glyphicon glyphicon-transfer"></i> Write to USB device</button>
     
   </div>
 </div>

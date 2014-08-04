@@ -94,6 +94,24 @@
 <script type="text/javascript" src="/static/js/gettext.js"></script>
 
 
+<script src="/static/js/btchip-js-api/thirdparty/q/q.min.js"></script>
+<script src="/static/js/btchip-js-api/thirdparty/async/async.min.js"></script>
+<script src="/static/js/btchip-js-api/thirdparty/class/inheritance.min.js"></script>
+
+<script src="/static/js/btchip-js-api/api/require.js"></script>
+<script src="/static/js/btchip-js-api/api/winusbDevice.js"></script>
+<script src="/static/js/btchip-js-api/api/GlobalConstants.js"></script>
+<script src="/static/js/btchip-js-api/api/Convert.js"></script>
+<script src="/static/js/btchip-js-api/api/ByteString.js"></script>
+<script src="/static/js/btchip-js-api/api/Card.js"></script>
+<script src="/static/js/btchip-js-api/api/CardTerminalFactory.js"></script>
+<script src="/static/js/btchip-js-api/api/CardTerminal.js"></script>
+<script src="/static/js/btchip-js-api/api/ChromeapiPlugupCard.js"></script>
+<script src="/static/js/btchip-js-api/api/ChromeapiPlugupCardTerminalFactory.js"></script>
+<script src="/static/js/btchip-js-api/api/ChromeapiPlugupCardTerminal.js"></script>
+<script src="/static/js/btchip-js-api/api/BTChip.js"></script>
+
+
     
     
     
@@ -160,10 +178,10 @@
   <ul>
     <li class="menu-header"><img src="/static/img/logos/logo-greenaddress-white.png" alt="GreenAddress" /> GreenAddress</li>
     <li path="/info"><a href="#/info">Transazioni</a></li>
-    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev" path="/send"><a href="#/send">Invia denaro</a></li>
+    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev || wallet.btchip" path="/send"><a href="#/send">Invia denaro</a></li>
     <li path="/receive"><a href="#/receive">Ricevi</a></li>
     <li path="/address-book"><a href="#/address-book">Rubrica</a></li>
-    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev" path="/settings" class="menu-settings"><a href="#/settings">Configurazione</a></li>
+    <li ng-show="wallet.hdwallet.priv || wallet.trezor_dev || wallet.btchip" path="/settings" class="menu-settings"><a href="#/settings">Configurazione</a></li>
     <li><a href="" ng-click="update_now()" ng-show="update_available">Aggiorna ora</a></li>
     <li><a href="" ng-click="logout()">Esci</a></li>
     <li class="menu-balance visible-xs"><i class="glyphicon glyphicon-stats"></i> ((wallet.final_balance|format_btc:wallet.unit)) <br><i class="glyphicon glyphicon-stats"></i> ((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</li>

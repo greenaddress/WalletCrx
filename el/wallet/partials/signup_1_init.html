@@ -40,8 +40,12 @@
                 <br>
                 <button class="btn btn-default btn-block-xs" ng-click="signup.qrmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-qrcode"></i> Εμφάνιση QR Code</button>
                 
-                <button tooltip="Warning: some printers store printed documents internally, so it can be insecure to print your mnemonic." class="btn btn-default btn-block-xs" onclick="window.print(); return false;" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-print"></i> Εκτύπωση συνθηματικού πρόσβασης</button>
                 
+                
+                <button class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-transfer"></i> Write to USB device</button>
+                
+                
+
                 <a class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_2factor#content_container">Συνέχεια!</a>
             </div>
 

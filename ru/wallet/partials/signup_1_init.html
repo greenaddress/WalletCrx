@@ -40,8 +40,12 @@
                 <br>
                 <button class="btn btn-default btn-block-xs" ng-click="signup.qrmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-qrcode"></i> Показать QR код</button>
                 
-                <button tooltip="Внимание: некоторые принтеры хранят документы внутри, поэтому печать Вашей мнемоники может быть небезопасной." class="btn btn-default btn-block-xs" onclick="window.print(); return false;" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-print"></i> Напечатать фразу доступа</button>
                 
+                
+                <button class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-transfer"></i> Write to USB device</button>
+                
+                
+
                 <a class="btn btn-primary btn-block-xs" ng-class="{disabled:!signup.mnemonic||!signup.secured_confirmed}" href="#/signup_2factor#content_container">Продолжить!</a>
             </div>
 
