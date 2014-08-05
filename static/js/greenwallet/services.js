@@ -1168,6 +1168,9 @@ angular.module('greenWalletServices', [])
         if (session) {
             session.close();
         }
+        if (txSenderService.btchip) {
+            txSenderService.btchip.dongle.disconnect_async();
+        }
         disconnected = true;
         txSenderService.logged_in = false;
         attempt_login = false;

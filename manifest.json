@@ -2,7 +2,8 @@
     "manifest_version": 2,
     "app": {
         "background": {
-            "scripts": ["background.js"]
+            "scripts": ["static/js/btchip-js-api/api/winusbDevice.js",
+                        "background.js"]
         }
     },
     "sandbox": {
@@ -24,5 +25,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress.it",
-    "version": "0.0.32"
+    "version": "0.0.33"
 }

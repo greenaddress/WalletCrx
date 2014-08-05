@@ -1,4 +1,4 @@
-var lang;
+var lang, usbDevices = {};
 
 var start = function() {
     chrome.app.window.create(lang+'/wallet.html', {
@@ -9,8 +9,12 @@ var start = function() {
         'id': 'wallet'
     }, function() {
         chrome.app.window.get('wallet').onClosed.removeListener(start); 
+        chrome.app.window.get('wallet').onClosed.addListener(function () {
+            for (var i in usbDevices) {
+                winUSBInterface.prototype.close.apply(usbDevices[i]);
+            }
+        });
     });
-    
 }
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'fr', 'it', 'pl', 'ru', 'uk', 'sv', 'nl', 'el'];
 chrome.app.runtime.onLaunched.addListener(function() {
@@ -35,13 +39,15 @@ chrome.app.runtime.onLaunched.addListener(function() {
 });
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-    switch (true) {
-        case request.changeLang:
-            var win = chrome.app.window.get('wallet');
-            lang = request.lang;
-            win.onClosed.addListener(start);
-            win.close();
-            break;
+    if (request.changeLang) {
+        var win = chrome.app.window.get('wallet');
+        lang = request.lang;
+        win.onClosed.addListener(start);
+        win.close();
+    } else if (request.usbClaimed) {
+        usbDevices[request.usbClaimed.device.handle] = request.usbClaimed;
+    } else if (request.usbClosed) {
+        delete usbDevices[request.usbClosed.device.handle];
     }
     return true;
 });
