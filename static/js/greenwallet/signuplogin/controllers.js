@@ -266,7 +266,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                     } else {
                         notices.makeNotice("error", error);
                     }
-                });;
+                });
             });
         });
     };
