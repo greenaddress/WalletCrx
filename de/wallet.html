@@ -155,11 +155,9 @@
     <small>(( subpage_title ))</small>
   </div>
   <div class="menu-mobile-bottom" toggle-class="visible" ng-show="wallet.final_balance !== undefined">
-    <a style="color:inherit;" href="" x-apple-data-detectors="false">((wallet.final_balance|format_btc:wallet.unit))</a> ≈ <a style="color:inherit;"  href="" x-apple-data-detectors="false">((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</a> 
-  <div ng-show="(wallet.hdwallet.pub || wallet.trezor_dev) && !wallet.hidden && is_loading" ng-cloak>
+    <a style="color:inherit;" href="" x-apple-data-detectors="false">((wallet.final_balance|format_btc:wallet.unit))</a> ≈ <a style="color:inherit;"  href="" x-apple-data-detectors="false">((wallet.fiat_value|number:2)) ((wallet.fiat_currency))</a>   <div ng-show="(wallet.hdwallet.pub || wallet.trezor_dev) && !wallet.hidden && is_loading" ng-cloak>
     <div class="spin"></div>
   </div>
-
   </div>
   <div class="container" toggle-class="visible">
     <p ng-show="wallet.twofac && !wallet.twofac.any"><span class="label label-warning">WARNUNG:</span> Sie haben keine zwei-Faktor-Authentifizierung eingerichtet. Bitte richten sie in den <a href="#/settings"> Einstellungen</a>.</p>
@@ -181,11 +179,9 @@
     <li><a href="" ng-click="logout()">Abmelden</a></li>
   </ul>
   <div class="menu-footer">
-    
-  <div ng-show="(wallet.hdwallet.pub || wallet.trezor_dev) && !wallet.hidden && is_loading" ng-cloak>
+      <div ng-show="(wallet.hdwallet.pub || wallet.trezor_dev) && !wallet.hidden && is_loading" ng-cloak>
     <div class="spin"></div>
   </div>
-
     
     <div><a href="/faq/" target="_blank">FAQ</a> | <a href="/support/" target="_blank">Hilfe</a></div>
     
