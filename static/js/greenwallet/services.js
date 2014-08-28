@@ -619,7 +619,7 @@ angular.module('greenWalletServices', [])
                                 return $scope.wallet.btchip.app.signTransaction_async(path.join('/')).then(function(sig) {
                                     $interval.cancel(int_promise);
                                     signed_n += 1;
-                                    sign_deferred.resolve(sig.toString(HEX));
+                                    sign_deferred.resolve("30" + sig.bytes(1).toString(HEX));
                                 }, sign_deferred.reject);
                             }, sign_deferred.reject)
                         }, sign_deferred.reject);
@@ -1180,9 +1180,11 @@ angular.module('greenWalletServices', [])
                             $q.when(hdwallet.derive(path[0])).then(function(result_pk) {
                                 btchip.app.signMessagePrepare_async(path.join('/'), new ByteString(msg, HEX)).then(function(result) {
                                     btchip.app.signMessageSign_async(new ByteString("00", HEX)).then(function(result) {
-                                        var signature = Bitcoin.ecdsa.parseSig(Bitcoin.convert.hexToBytes(result.toString(HEX)));
+                                        var signature = Bitcoin.ecdsa.parseSig(Bitcoin.convert.hexToBytes("30" + result.bytes(1).toString(HEX)));
                                         var i = Bitcoin.ecdsa.calcPubKeyRecoveryParam(
                                             result_pk.pub.pub, signature.r, signature.s, Bitcoin.Message.magicHash(msg_plain));
+					//Can be optimized as follows on 1.4.9
+					//var i = (result.byteAt(0) & 0x01)
                                         d.resolve(device_id().then(function(devid) {
                                             return txSenderService.call('http://greenaddressit.com/login/authenticate',
                                                     [signature.r.toString(), signature.s.toString(), i.toString()], logout||false,
