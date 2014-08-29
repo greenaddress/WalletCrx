@@ -1181,10 +1181,12 @@ angular.module('greenWalletServices', [])
                                 btchip.app.signMessagePrepare_async(path.join('/'), new ByteString(msg, HEX)).then(function(result) {
                                     btchip.app.signMessageSign_async(new ByteString("00", HEX)).then(function(result) {
                                         var signature = Bitcoin.ecdsa.parseSig(Bitcoin.convert.hexToBytes("30" + result.bytes(1).toString(HEX)));
-                                        var i = Bitcoin.ecdsa.calcPubKeyRecoveryParam(
-                                            result_pk.pub.pub, signature.r, signature.s, Bitcoin.Message.magicHash(msg_plain));
-					//Can be optimized as follows on 1.4.9
-					//var i = (result.byteAt(0) & 0x01)
+                                        if (btchip.features.signMessageRecoveryParam) {
+                                            var i = result.byteAt(0) & 0x01;
+                                        } else {
+                                            var i = Bitcoin.ecdsa.calcPubKeyRecoveryParam(
+                                                result_pk.pub.pub, signature.r, signature.s, Bitcoin.Message.magicHash(msg_plain));
+                                        }
                                         d.resolve(device_id().then(function(devid) {
                                             return txSenderService.call('http://greenaddressit.com/login/authenticate',
                                                     [signature.r.toString(), signature.s.toString(), i.toString()], logout||false,
@@ -2092,18 +2094,21 @@ angular.module('greenWalletServices', [])
                     if (result.length) {
                         cardFactory.getCardTerminal(result[0]).getCard_async().then(function(dongle) {
                             var app = new BTChip(dongle);
+                            var features = {};
                             app.getFirmwareVersion_async().then(function(version) {
                                 if (version.firmwareVersion.toString(HEX) < '000104080000') {
                                     var notice = gettext("Old BTChip firmware version detected. Please upgrade to at least %s.").replace('%s', '1.4.8');
                                     notices.makeNotice("error", notice);
                                     return;
                                 }
+                                features.signMessageRecoveryParam =
+                                    version.firmwareVersion.toString(HEX) >= '000104090000';
                                 if (noModal) {
                                     $interval.cancel(tick);
                                 } else {
                                     modal.close();  // modal close cancels the tick
                                 }
-                                deferred.resolve(service._setupWrappers({dongle: dongle, app: app}));
+                                deferred.resolve(service._setupWrappers({dongle: dongle, app: app, features: features}));
                             });
                         });
                     }
