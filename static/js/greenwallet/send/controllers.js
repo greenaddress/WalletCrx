@@ -238,6 +238,19 @@ angular.module('greenWalletSendControllers',
                 d.resolve(verify(false).then(function(r) {
                     $scope.send_tx.verifying = false;
                     return r;
+                }, function(err) {
+                    if (err == 'no electrum') {
+                        return $modal.open({
+                            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_no_electrum.html',
+                            windowClass: 'twofactor' // display on top of loading indicator
+                        }).result.then(function()  {
+                            return verify(true);
+                        }, function() {
+                            return $q.reject(gettext('No Electrum servers reachable'));
+                        });
+                    } else {
+                        return $q.reject(err);
+                    }
                 }));
             }, function() {
                 $modal.open({

@@ -89,9 +89,10 @@ Electrum.prototype.checkConnectionsAvailable = function() {
   return new Promise(function(resolve, reject) {
     var tryServer = function (name) {
       return new Promise(function(resolve, reject) {
-        var socketId;
+        var socketId, timeouted;
 
         var onConnectComplete = function (result) {
+          if (timeouted) return;
           if (result != 0) {
             reject();
           } else {
@@ -110,6 +111,12 @@ Electrum.prototype.checkConnectionsAvailable = function() {
         chrome.sockets.tcp.create({
           "name": "electrum_test"
         }, onSocketCreate);
+
+        setTimeout(function() {
+          timeouted = true;
+          chrome.sockets.tcp.close(socketId);
+          reject();
+        }, 1000)
       });
     };
 
@@ -134,42 +141,42 @@ Electrum.prototype.checkConnectionsAvailable = function() {
 Electrum.prototype.issueAddressGetHistory = function(addr_b58) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.address.get_history", [addr_b58])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
 Electrum.prototype.issueAddressSubscribe = function(addr_b58) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.address.subscribe", [addr_b58])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
 Electrum.prototype.issueTransactionGet = function(tx_hash) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.transaction.get", [tx_hash])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
 Electrum.prototype.issueTransactionBroadcast = function(tx) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.transaction.broadcast", [tx])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
 Electrum.prototype.issueHeadersSubscribe = function() {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.headers.subscribe", [])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
 Electrum.prototype.issueBlockGetHeader = function(block_num) {
   return new Promise(function(resolve, reject) {
     this._enqueueRpc("blockchain.block.get_header", [block_num])
-      .then(resolve);
+      .then(resolve, reject);
   }.bind(this));
 };
 
@@ -303,13 +310,13 @@ Electrum.prototype.flushOutgoingQueue = function() {
   if (this.outgoingQueue.length == 0) {
     return;
   }
-  
+
   if (!this.isSocketConnected) {
     if (!self.connecting)
-      this.connectToServer();  // onConnectComplete calls flushOutgoingQueue again  
+      this.connectToServer();  // onConnectComplete calls flushOutgoingQueue again
     return;
   }
-  
+
   while (this.outgoingQueue.length != 0) {
     string2ArrayBuffer(
       this.outgoingQueue.shift(),
@@ -329,8 +336,26 @@ Electrum.prototype._enqueueRpc = function(method, params) {
       "params": params
     };
     this.outgoingQueue.push(JSON.stringify(rpc) + "\n");
-    this.callbacks[rpc["id"]] = {"resolve": resolve, "reject": reject};
+    var resolved;
+    var _resolve = function(arg) {
+      if (!resolved) {
+        resolved = true;
+        resolve(arg);
+      }
+    }
+    var _reject = function(arg) {
+      if (!resolved) {
+        resolved = true;
+        reject(arg);
+      }
+    }
+    this.callbacks[rpc["id"]] = {"resolve": _resolve, "reject": _reject};
     this.pendingRpcCount++;
     this.flushOutgoingQueue();
+    setTimeout(function() {
+      if (!resolved) {
+        _reject('timeout');
+      }
+    }, 5000);
   }.bind(this));
 };
