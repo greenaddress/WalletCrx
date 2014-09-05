@@ -74,25 +74,29 @@ function Electrum() {
 };
 
 Electrum.SERVERS = [
-  "b.1209k.com",
-  "cube.l0g.in",
-  "ecdsa.org",
-  "electrum.be",
   "electrum.no-ip.org",
-  "electrum.novit.ro",
   "electrum.stepkrav.pw",
-  "electrum.stupidfoot.com",
-  "sspc1000.homeip.net",
+  "ecdsa.net",
+  "bitcoin.epicinet.net",
+  "erbium1.sytes.net",
+  "electrum0.electricnewyear.net",
+  "kirsche.emzy.de",
+  "electrum2.hachre.de",
+  "electrum.hsmiths.com",
+  "EAST.electrum.jdubya.info",
+  "WEST.electrum.jdubya.info",
+  "electrum.thwg.org"
 ];
 
 Electrum.prototype.checkConnectionsAvailable = function() {
   return new Promise(function(resolve, reject) {
     var tryServer = function (name) {
       return new Promise(function(resolve, reject) {
-        var socketId, timeouted;
+        var socketId, resolved;
 
         var onConnectComplete = function (result) {
-          if (timeouted) return;
+          if (resolved) return;
+          resolved = true;
           if (result != 0) {
             reject();
           } else {
@@ -113,7 +117,8 @@ Electrum.prototype.checkConnectionsAvailable = function() {
         }, onSocketCreate);
 
         setTimeout(function() {
-          timeouted = true;
+          if (resolved) return;
+          resolved = true;
           chrome.sockets.tcp.close(socketId);
           reject();
         }, 1000)
