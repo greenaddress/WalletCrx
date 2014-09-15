@@ -130,6 +130,8 @@ if (self.cordova && cordova.platformId == 'ios') {
         }
 
         var that = this;
+        var orig_network = this.network;
+        this.network = 'mainnet';  // our BIP32 for iOS doesn't support testnet
         cordova.exec(function(param) {
             console.log(param);
             var hd = new Bitcoin.HDWallet()
@@ -148,6 +150,7 @@ if (self.cordova && cordova.platformId == 'ios') {
             console.log('BIP32.derive failed: ' + fail)
             deferred.reject(fail);
         }, "BIP32", "derive", [this.toHex(!!this.priv), parseInt(i), usePriv ? "true" : "false"]);
+        this.network = orig_network;
 
         return deferred.promise;
     }

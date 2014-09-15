@@ -87,6 +87,25 @@ angular.module('greenWalletTransactionsControllers',
         });
     };
 
+    $scope.edit_tx_memo = function(tx) {
+        if (tx.new_memo == tx.memo) {
+            // nothing to do
+            tx.changing_memo = false;
+        } else {
+            tx_sender.call('http://greenaddressit.com/txs/change_memo', tx.txhash, tx.new_memo).then(function() {
+                tx.memo = tx.new_memo;
+                tx.changing_memo = false;
+            }, function(err) {
+                notices.makeNotice('error', err.desc);
+            });
+        }
+    };
+
+    $scope.start_editing_tx_memo = function(tx) {
+        tx.changing_memo = true;
+        tx.new_memo = tx.memo;
+    };
+
     $scope.details = function(transaction) {
         gaEvent('Wallet', 'TransactionsTabDetailsModal');
         $scope.selected_transaction = transaction;
