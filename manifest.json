@@ -15,7 +15,9 @@
         "usb",
         {"usbDevices": [
             {"vendorId": 9601,
-             "productId": 7036}
+             "productId": 7036},
+            {"vendorId": 9601,
+             "productId": 6152}
         ]}
     ],
     "sockets": {
@@ -25,5 +27,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress",
-    "version": "0.0.49"
+    "version": "0.0.50"
 }

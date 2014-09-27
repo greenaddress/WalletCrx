@@ -21,20 +21,21 @@ require('ChromeapiPlugupCardTerminal');
 
 var ChromeapiPlugupCardTerminalFactory = Class.extend(CardTerminalFactory, {
 	/** @lends ChromeapiPlugupCardTerminalFactory.prototype */
-	
+
 	/**
 	 *  @class Implementation of the {@link CardTerminalFactory} using the Chrome API for Plug-up Dongle
 	 *  @constructs
 	 *  @augments CardTerminalFactory
-	 */				
-	initialize: function() {
+	 */
+	initialize: function(pid) {
+		this.pid = pid;
 	},
-	
+
 	list_async: function() {
 		if (typeof winusbDevice == "undefined") {
 			throw "Content script is not available";
 		}
-		return winusbDevice.enumerateDongles_async()
+		return winusbDevice.enumerateDongles_async(this.pid)
 		       .then(function(result) {
 		       		return result.deviceList;
 		       });

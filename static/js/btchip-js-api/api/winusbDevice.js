@@ -33,7 +33,7 @@ function dump(array) {
     hexrep[2 * i] = hexchars.charAt((array[i] >> 4) & 0x0f);
     hexrep[2 * i + 1] = hexchars.charAt(array[i] & 0x0f);
   }
-  return hexrep.join('');  
+  return hexrep.join('');
 }
 
 function hexToArrayBuffer(h) {
@@ -50,7 +50,7 @@ function hexToArrayBuffer(h) {
 function winUSBInterface(hardwareId) {
     this.hardwareId = hardwareId;
     this.closedDevice = false;
-    this.claimed = false;    
+    this.claimed = false;
     this.device = hardwareId.device;
     // Locate the interface to open, the in/out endpoints and their sizes
     for (var i=0; i<hardwareId.interfaces.length; i++) {
@@ -89,12 +89,12 @@ winUSBInterface.prototype.bulkSend = function(data, callback) {
           direction: "out",
           endpoint: this.outEndpoint,
           data: hexToArrayBuffer(data)
-        },        
-        function(result) {                  
+        },
+        function(result) {
           if (callback) {
-            var exception = (result.resultCode != 0 ? "error " + result.resultCode : undefined);            
+            var exception = (result.resultCode != 0 ? "error " + result.resultCode : undefined);
             callback({
-              resultCode: result.resultCode,            
+              resultCode: result.resultCode,
               exception: exception
             });
           }
@@ -126,7 +126,7 @@ winUSBInterface.prototype.bulkRead = function(size, callback) {
 }
 
 winUSBInterface.prototype.close = function(callback) {
-    var currentDevice = this;  
+    var currentDevice = this;
     if (this.claimed) {
       chrome.usb.releaseInterface(this.device, this.interfaceId, function() {
         currentDevice.claimed = false;
@@ -134,7 +134,7 @@ winUSBInterface.prototype.close = function(callback) {
           currentDevice.closedDevice = true;
           chrome.runtime.sendMessage({usbClosed: currentDevice});
           if (callback) callback();
-        });        
+        });
       });
     }
     else
@@ -143,7 +143,7 @@ winUSBInterface.prototype.close = function(callback) {
           currentDevice.closedDevice = true;
           chrome.runtime.sendMessage({usbClosed: currentDevice});
           if (callback) callback();
-        });        
+        });
     }
 }
 
@@ -156,7 +156,7 @@ var unclaimedDevices = [];
 
 winusbDevice.prototype.open_async = function() {
   var currentDevice = this;
-  var msg = { 
+  var msg = {
     parameters: {
       device: this.device
     }
@@ -164,7 +164,7 @@ winusbDevice.prototype.open_async = function() {
 
   var deferred = Q.defer();
   var parameters = msg.parameters;
-  var device = new winUSBInterface(parameters.device);      
+  var device = new winUSBInterface(parameters.device);
   boundDevices.push(device);
   for (var i=0; i<unclaimedDevices.length; i++) {
       if (unclaimedDevices.handle == parameters.device.handle) {
@@ -185,7 +185,7 @@ winusbDevice.prototype.open_async = function() {
 }
 
 winusbDevice.prototype.send_async = function(data) {
-  var msg = { 
+  var msg = {
     parameters: {
       deviceId: this.id,
       data: data
@@ -196,17 +196,17 @@ winusbDevice.prototype.send_async = function(data) {
   var device = boundDevices[msg.parameters.deviceId]
   device.bulkSend(parameters.data, function(result) {
     deferred.resolve(result);
-  });         
+  });
   return deferred.promise;
 }
 
 winusbDevice.prototype.recv_async = function(size) {
-  var msg = { 
+  var msg = {
     parameters: {
       deviceId: this.id,
       size: size
     }
-  };   
+  };
   var deferred = Q.defer();
   var parameters = msg.parameters;
   var device = boundDevices[msg.parameters.deviceId]
@@ -221,22 +221,22 @@ winusbDevice.prototype.close_async = function() {
     parameters: {
       deviceId: this.id
     }
-  };  
+  };
   var deferred = Q.defer();
 
   var device = boundDevices[msg.parameters.deviceId];
   device.close(function() {
     deferred.resolve({});
-  });         
+  });
   return deferred.promise;
 }
 
 
-winusbDevice.enumerateDongles_async = function() {
-  var msg = { 
+winusbDevice.enumerateDongles_async = function(pid) {
+  var msg = {
     parameters: {
       vid: 0x2581,
-      pid: 0x1b7c
+      pid: pid || 0x1b7c
     }
   };
 
@@ -278,12 +278,12 @@ winusbDevice.enumerateDongles_async = function() {
         deferred.resolve({
           deviceList: probedDevicesWithInterfaces
         });
-      }          
+      }
 
       // Locate suitable interfaces
-                          
+
       for (var currentDevice=0; currentDevice<devices.length; currentDevice++) {
-        (function(currentDevice) { 
+        (function(currentDevice) {
           chrome.usb.listInterfaces(devices[currentDevice], function(interfaceList) {
             probedDevices++;
             // If the device has at least one WinUSB interface, it can be probed
@@ -314,7 +314,7 @@ winusbDevice.enumerateDongles_async = function() {
           }); // chrome.usb.listInterfaces
         })(currentDevice); // per device closure
       }
-    }); // chrome.usb.findDevices 
+    }); // chrome.usb.findDevices
 
   return deferred.promise;
 }

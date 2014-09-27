@@ -1,0 +1,171 @@
+<html>
+<head>
+<meta charset="utf-8">
+    <title>BTChip - firmware update</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link href="thirdparty/blackbirdjs/blackbird.css" rel="stylesheet">        
+    <link href="../static/css/greenaddress.css" rel="stylesheet" media="screen">
+    <script type="text/javascript" src="thirdparty/jquery/jquery-2.1.1.min.js"></script>    
+    <script type="text/javascript" src="version.js"></script>
+</head>
+<body>
+
+    <div class="container">
+
+        <h1>BTChip Firmware Update</h1>
+
+        <div id="beta" class="hidden"><p><hr><h3><strong>*** BETA ***</strong> : this firmware version is not finalized and can cause random issues.</h3><hr></p></div>
+
+        <h2><strong>WARNING</strong> : Firmware update will delete the seed. Make sure you have a backup of your seed, or send your funds to a different address before continuing</h2>
+
+	<p>If the process crashes at some point, it can likely be recovered - remove the dongle, insert it again, reload the page and start the update again</p>
+
+        <p>
+          <button id="startButton" type="button" class="btn btn-default">Start update</button>
+          <button id="reloadButton" type="button" class="btn btn-default">Reload this page</button>
+        </p>
+
+        <h5>Version 0.4 - 10.09.14_1 / for 1.4.10 </h5>
+
+
+    </div>
+
+<div class="modal fade" id="modalConfirm"  tabindex="-1" role="dialog" aria-labelledby="modalConfirm" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+              <h2 id="confirmMessage"/>
+            </div>
+            <div class="modal-footer">
+              <button id="confirmButton" type="button" class="btn btn-primary">OK</button>                          
+              <button id="cancelButton" type="button" class="btn">Cancel</button>            
+            </div>
+      </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="modalConnect" tabindex="-1" role="dialog" aria-labelledby="modalConnect" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Please connect your BTChip dongle</h3>
+            </div>
+      </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="modalDisconnect"  tabindex="-1" role="dialog" aria-labelledby="modalDisconnect" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3>Please disconnect your BTChip dongle</h3>
+            </div>
+      </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="modalStage"  tabindex="-1" role="dialog" aria-labelledby="modalStage" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+                <h3 id="currentOperation"></h3>
+                <p>
+                  <div class="progress">
+                    <div id="stageBar" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%;">
+                    </div>
+                  </div>                  
+                </p>
+            </div>
+      </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="modalEndOK"  tabindex="-1" role="dialog" aria-labelledby="modalEndOK" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+              <h2 class="glyphicon glyphicon-ok-sign">&nbsp;</h2>
+                <h2 id="okMessage"/>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>            
+            </div>
+      </div>
+  </div>
+</div>  
+
+<div class="modal fade" id="modalEndKO"  tabindex="-1" role="dialog" aria-labelledby="modalEndKO" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-body">
+              <h2 class="glyphicon glyphicon-remove-sign">&nbsp;</h2>
+                <h2 id="koMessage"/>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>            
+            </div>
+      </div>
+  </div>
+</div>  
+
+</body>    
+ 
+<script type="text/javascript" src="upgrade.js"></script>
+
+
+
+  <script type="text/javascript" src="thirdparty/bootstrap/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="../static/js/btchip-js-api/thirdparty/q/q.min.js"></script>
+	<script type="text/javascript" src="thirdparty/blackbirdjs/blackbird.js"></script>
+
+  <script type="text/javascript" src="../static/js/btchip-js-api/thirdparty/class/inheritance.min.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/require.js"></script>  
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/GlobalConstants.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/ByteString.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/Convert.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/Card.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/CardTerminal.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/CardTerminalFactory.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/winusbDevice.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/ChromeapiPlugupCard.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/ChromeapiPlugupCardTerminal.js"></script>
+  <script type="text/javascript" src="../static/js/btchip-js-api/api/ChromeapiPlugupCardTerminalFactory.js"></script>
+
+  <script type="text/javascript" src="data/btchipfirmware-loader-0143.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-0144.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-0146.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-0147.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-0148.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-0149.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-01410.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0143.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0144.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0146.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0147.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0148.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-0149.js"></script>  
+  <script type="text/javascript" src="data/btchipfirmware-loader-from-loader-01410.js"></script>  
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0143.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0144.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0145.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0146.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0147.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0148.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-0149.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-01410.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0143.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0144.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0146.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0147.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0148.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-0149.js"></script>
+  <script type="text/javascript" src="data/btchipfirmware-reloader-from-loader-01410.js"></script>  
+  <script type="text/javascript" src="data/btchipfirmware-init-01410.js"></script>
+
+  <script type="text/javascript" src="upgrade_globals.js"></script>
+
+  </body>
+</html>
+

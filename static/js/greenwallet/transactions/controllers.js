@@ -51,41 +51,6 @@ angular.module('greenWalletTransactionsControllers',
             scope: $scope
         });
     }
-    $scope.generate_nlocktime = function(transaction, output) {
-        wallets.get_two_factor_code($scope).then(function(twofactor_data) {
-            tx_sender.call("http://greenaddressit.com/vault/prepare_nlocktime",
-                [[transaction.txhash, output.pt_idx]], twofactor_data).then(function(data) {
-                    // TODO: verify
-                    var tx = Bitcoin.Transaction.deserialize(data.tx);
-                    var signatures = [];
-                    var ins = [output];
-                    for (var i = 0; i < ins.length; ++i) {
-                        var out = ins[i];
-                        var in_ = tx.ins[i];
-                        var key = tx_sender.hdwallet;
-                        key = key.derive(branches.REGULAR);
-                        key = key.derive(out.pubkey_pointer);
-                        key = key.priv;
-                        var script = new Bitcoin.Script(in_.script.chunks[3]);
-                        var SIGHASH_ALL = 1;
-                        var sign = key.sign(tx.hashTransactionForSignature(script, i, SIGHASH_ALL));
-                        sign.push(SIGHASH_ALL);
-
-                        var in_script = new Bitcoin.Script();
-                        in_script.writeOp(0);
-                        in_script.writeBytes(in_.script.chunks[1]);  // ga sig
-                        in_script.writeBytes(sign);  // user's sig
-                        in_script.writeBytes(in_.script.chunks[3]);  // 2of2 outscript
-                        in_.script = in_script;
-
-                        data.tx = Bitcoin.convert.bytesToHex(tx.serialize());
-                    }
-                    output.nlocktime_json = JSON.stringify(data);
-            }, function(error) {
-                notices.makeNotice('error', error.desc);
-            });
-        });
-    };
 
     $scope.edit_tx_memo = function(tx) {
         if (tx.new_memo == tx.memo) {

@@ -22,20 +22,20 @@ require('Card');
 
 var ChromeapiPlugupCard = Class.extend(Card, {
 	/** @lends ChromeapiPlugupCard.prototype */
-	
+
 	/**
 	 *  @class In browser implementation of the {@link Card} interface using the Chrome API
 	 *  @param {PPACardTerminal} terminal Terminal linked to this card
 	 *  @constructs
 	 *  @augments Card
 	 */
-	initialize:function(terminal, device) {		
+	initialize:function(terminal, device) {
 		//console.log(device);
 		this.device = new winusbDevice(device);
 		this.terminal = terminal;
                 this.exchangeStack = [];
 	},
-	
+
 	connect_async:function() {
 		var currentObject = this;
 		return this.device.open_async().then(function(result) {
@@ -43,25 +43,25 @@ var ChromeapiPlugupCard = Class.extend(Card, {
 			return currentObject;
 		});
 	},
-	
+
 	getTerminal : function() {
 		return this.terminal;
 	},
-	
+
 	getAtr : function() {
 		return new ByteString("", HEX);
 	},
-	
+
 	beginExclusive : function() {
 	},
-	
+
 	endExclusive : function() {
 	},
-	
+
 	openLogicalChannel: function(channel) {
 		throw "Not supported";
 	},
-	
+
 	exchange_async : function(apdu, returnLength) {
 		var currentObject = this;
 		if (!(apdu instanceof ByteString)) {
@@ -74,23 +74,23 @@ var ChromeapiPlugupCard = Class.extend(Card, {
 		var deferred = Q.defer();
 		deferred.promise.apdu = apdu;
                 deferred.promise.returnLength = returnLength;
-                
+
                 // enter the exchange wait list
 		currentObject.exchangeStack.push(deferred);
-                
+
                 if (currentObject.exchangeStack.length == 1) {
                   var processNextExchange = function() {
-                    
+
                     // don't pop it now, to avoid multiple at once
                     var deferred = currentObject.exchangeStack[0];
-                    
+
                     // notify graphical listener
                     if (typeof currentObject.listener != "undefined") {
                       currentObject.listener.begin();
                     }
-                    
+
                     currentObject.device.send_async(deferred.promise.apdu.toString(HEX)).then(
-                            function(result) {                      
+                            function(result) {
                                     return currentObject.device.recv_async(512);
                             }
                     )
@@ -103,23 +103,24 @@ var ChromeapiPlugupCard = Class.extend(Card, {
                             }
                             else {
                                     var size = resultBin.byteAt(1);
-                                    // fake T0 
+                                    // fake T0
                                     if (size == 0) { size = 256; }
                                     deferred.promise.response = resultBin.bytes(2, size);
                                     deferred.promise.SW1 = resultBin.byteAt(2 + size);
                                     deferred.promise.SW2 = resultBin.byteAt(2 + size + 1);
                             }
                             deferred.promise.SW = ((deferred.promise.SW1 << 8) + (deferred.promise.SW2));
+                            currentObject.SW = ((deferred.promise.SW1 << 8) + (deferred.promise.SW2));
                             if (typeof currentObject.logger != "undefined") {
                                     currentObject.logger.log(currentObject.terminal.getName(), 0, deferred.promise.apdu, deferred.promise.response, deferred.promise.SW);
                             }
                             // build the response
                             deferred.resolve(deferred.promise.response);
                     })
-                    .fail(function(err) { 
+                    .fail(function(err) {
                       deferred.reject(err);
                     })
-                    .finally(function () { 
+                    .finally(function () {
                       // notify graphical listener
                       if (typeof currentObject.listener != "undefined") {
                         currentObject.listener.end();
@@ -127,40 +128,40 @@ var ChromeapiPlugupCard = Class.extend(Card, {
 
                       // consume current promise
                       currentObject.exchangeStack.shift();
-                      
+
                       // schedule next exchange
                       if (currentObject.exchangeStack.length > 0) {
                         processNextExchange();
                       }
-                    });                    
+                    });
                   };
-                  
+
                   // schedule next exchange
                   processNextExchange();
                 }
-                
+
                 // the exchangeStack will process the promise when possible
                 return deferred.promise;
 	},
 
 	reset:function(mode) {
-	},	
-	
+	},
+
 	disconnect_async:function(mode) {
-		var currentObject = this;		
+		var currentObject = this;
 		if (!this.connection) {
 			return;
 		}
 		return this.device.close_async().then(function(result) {
 			currentObject.connection = false;
 		});
-	},	
-	
+	},
+
         /*
 	getSW : function() {
 		return this.SW;
 	},
-	
+
 	getSW1 : function() {
 		return this.SW1;
 	},
@@ -169,24 +170,24 @@ var ChromeapiPlugupCard = Class.extend(Card, {
 		return this.SW2;
 	},
         */
-	
+
 	setCommandDelay : function(delay) {
 		// unsupported - use options
 	},
-	
+
 	setReportDelay : function(delay) {
 		// unsupported - use options
 	},
-	
+
 	getCommandDelay : function() {
 		// unsupported - use options
 		return 0;
 	},
-	
+
 	getReportDelay : function() {
 		// unsupported - use options
 		return 0;
 	}
-		
-	
+
+
 });
