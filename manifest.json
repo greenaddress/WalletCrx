@@ -2,7 +2,7 @@
     "manifest_version": 2,
     "app": {
         "background": {
-            "scripts": ["static/js/btchip-js-api/api/winusbDevice.js",
+            "scripts": ["static/js/btchip-js-api/api/chromeDevice.js",
                         "background.js"]
         }
     },
@@ -13,9 +13,14 @@
         "storage",
         "videoCapture",
         "usb",
+        "hid",
         {"usbDevices": [
             {"vendorId": 9601,
              "productId": 7036},
+            {"vendorId": 9601,
+             "productId": 11132},            
+            {"vendorId": 9601,
+             "productId": 6151},             
             {"vendorId": 9601,
              "productId": 6152}
         ]}
