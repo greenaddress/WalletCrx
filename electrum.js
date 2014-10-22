@@ -89,6 +89,7 @@ Electrum.SERVERS = [
 ];
 
 Electrum.prototype.checkConnectionsAvailable = function() {
+  var that = this;
   return new Promise(function(resolve, reject) {
     var tryServer = function (name) {
       return new Promise(function(resolve, reject) {
@@ -101,6 +102,7 @@ Electrum.prototype.checkConnectionsAvailable = function() {
             reject();
           } else {
             chrome.sockets.tcp.close(socketId);
+            that.currentServerHostname = name;
             resolve();
           }
         }

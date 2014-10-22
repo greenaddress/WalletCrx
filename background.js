@@ -3,7 +3,7 @@ var lang, usbDevices = {};
 var start = function() {
     chrome.app.window.create(lang+'/wallet.html', {
         'bounds': {
-            'width': 900,
+            'width': 992,
             'height': 700,
         },
         'id': 'wallet'
