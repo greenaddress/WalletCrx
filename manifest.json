@@ -18,9 +18,9 @@
             {"vendorId": 9601,
              "productId": 7036},
             {"vendorId": 9601,
-             "productId": 11132},            
+             "productId": 11132},
             {"vendorId": 9601,
-             "productId": 6151},             
+             "productId": 6151},
             {"vendorId": 9601,
              "productId": 6152}
         ]}
@@ -32,5 +32,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress",
-    "version": "0.0.52"
+    "version": "0.0.53"
 }
