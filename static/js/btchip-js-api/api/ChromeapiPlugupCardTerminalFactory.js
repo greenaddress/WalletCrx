@@ -32,10 +32,10 @@ var ChromeapiPlugupCardTerminalFactory = Class.extend(CardTerminalFactory, {
 	},
 
 	list_async: function() {
-		if (typeof winusbDevice == "undefined") {
+		if (typeof chromeDevice == "undefined") {
 			throw "Content script is not available";
 		}
-		return winusbDevice.enumerateDongles_async(this.pid)
+		return chromeDevice.enumerateDongles_async(this.pid)
 		       .then(function(result) {
 		       		return result.deviceList;
 		       });
