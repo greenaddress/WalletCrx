@@ -122,7 +122,16 @@ var ChromeapiPlugupCard = Class.extend(Card, {
 								return receivePart();
 							}
 							var blockSize = (deferred.promise.apdu.length - offsetSent > 64 ? 64 : deferred.promise.apdu.length - offsetSent);
-							return currentObject.device.send_async(deferred.promise.apdu.bytes(offsetSent, blockSize).toString(HEX)).then(
+							var block = deferred.promise.apdu.bytes(offsetSent, blockSize);
+							var padding = "";
+							var paddingSize = 64 - block.length;
+							for (var i=0; i<paddingSize; i++) {
+								padding += "00";
+							}
+							if (padding.length != 0) {
+								block = block.concat(new ByteString(padding, HEX));
+							}
+							return currentObject.device.send_async(block.toString(HEX)).then(
 								function(result) {
 									offsetSent += blockSize;
 									return sendPart();
