@@ -7,7 +7,8 @@
         BL_RELOADER_0147,
         BL_RELOADER_0148,
         BL_RELOADER_0149,
-        BL_RELOADER_01410
+        BL_RELOADER_01410,
+	BL_RELOADER_01411
       ];
 
       var BL_LOADER = [
@@ -17,7 +18,8 @@
         BL_LOADER_0147,
         BL_LOADER_0148,
         BL_LOADER_0149,
-        BL_LOADER_01410
+        BL_LOADER_01410,
+	BL_LOADER_01411
       ];
 
       var OS_LOADER = [
@@ -27,7 +29,8 @@
         LOADER_0147,
         LOADER_0148,
         LOADER_0149,
-        LOADER_01410
+        LOADER_01410,
+	LOADER_01411
       ];
 
       var BL_RELOADER = [
@@ -39,6 +42,7 @@
         [ (1 << 16) + (4 << 8) + (8), RELOADER_0148],
         [ (1 << 16) + (4 << 8) + (9), RELOADER_0149],
         [ (1 << 16) + (4 << 8) + (10), RELOADER_01410],
+	[ (1 << 16) + (4 << 8) + (11), RELOADER_01411]
       ];
 
     Q.longStackSupport = true;

@@ -179,7 +179,7 @@
   }
 
   function processInitOS() {
-        processLoadingScript(INIT_01410, "Initializing application (step 4/4)", true).then(function(result) {
+        processLoadingScript(INIT_01411, "Initializing application (step 4/4)", true).then(function(result) {
           stage = STAGE_UNDEFINED;
           osLoaded = false;
           $("#okMessage").html("Firmware update " + versionToString(CURRENT_OS) + " successful");
