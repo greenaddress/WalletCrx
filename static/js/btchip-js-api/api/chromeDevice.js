@@ -18,7 +18,7 @@ limitations under the License.
 
 if (typeof chromeDevice == "undefined") {
 
-var DEBUG = true;
+var DEBUG = false;
 function debug(message) {
   if (DEBUG) {
     console.log(message);
