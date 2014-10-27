@@ -125,7 +125,8 @@
                       <div style="display:inline" ng-include="'/'+LANG+'/wallet/partials/wallet_fiat_price.html'"></div>
                   </div>
                   <div class="col-xs-4 col-sm-4 col-md-4">
-                      <a class="btn btn-default btn-sm pull-right" style="min-width: 35px !important; width: 35px !important" ng-click="wallet.update_balance()"><i ng-hide="wallet.balance_updating" class="glyphicon glyphicon-refresh"></i><i ng-show="wallet.balance_updating" class="glyphicon glyphicon-refresh spin"></i></a>
+                      <a class="btn btn-default btn-sm" style="min-width: 35px !important; width: 35px !important" ng-click="wallet.update_balance()" ng-hide="wallet.balance_updating"><i class="glyphicon glyphicon-refresh"></i></a>
+                      <a class="btn btn-default btn-sm" style="min-width: 35px !important; width: 35px !important" ng-show="wallet.balance_updating"><i class="glyphicon spin"></i></a>
                   </div>
               </div>
           </div>
@@ -143,7 +144,7 @@
       </div>
       <div class="form-group">
       <div class="col-sm-offset-2 col-sm-10" ng-hide="send_tx.recipient.type == 'payreq' && !send_tx.instant">
-          <label tooltip="E' necessario che chi riceve la transazioni accetti le conferme instantanee GreenAddress">
+          <label tooltip="Requires recipient to trust GreenAddress instant confirmations">
             <input type="checkbox" ng-model="send_tx.instant" ng-disabled="send_tx.recipient.type == 'payreq'" />
             <span>Conferma immediata</span>
           </label>

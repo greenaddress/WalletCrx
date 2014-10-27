@@ -2434,7 +2434,7 @@ angular.module('greenWalletServices', [])
                                 $interval.cancel(tick);
                             }
                             var features = {};
-			    var firmwareVersion = version.firmwareVersion.bytes(0, 4);
+                            var firmwareVersion = version.firmwareVersion.bytes(0, 4);
                             if (firmwareVersion.toString(HEX) < '00010408') {
                                 btchip.dongle.disconnect_async();
                                 showUpgradeModal();
