@@ -51,7 +51,7 @@ angular.module('greenWalletInfoControllers',
                 return [Math.round(parent.offsetWidth), Math.round(parent.offsetWidth * (290/920))];
             };
             var size = getSize();
-            var pow = {'BTC': 8, 'mBTC': 5, 'µBTC': 2}[$scope.wallet.unit];
+            var pow = {'BTC': 8, 'mBTC': 5, 'µBTC': 2, 'bits': 2}[$scope.wallet.unit];
             bMin /= Math.pow(10, pow); bMax /= Math.pow(10, pow);
             var dScale = (bMax - bMin) * 0.1;
             btcGraph.width(size[0]).height(size[1])
@@ -96,7 +96,7 @@ angular.module('greenWalletInfoControllers',
     }
 
     $scope.$watch('filtered_transactions', function(newValue, oldValue) {
-        if (newValue) newValue.populate_csv();
+        if (newValue && newValue.populate_csv) newValue.populate_csv();
     });
 
     var updating_timeout;
@@ -143,7 +143,7 @@ angular.module('greenWalletInfoControllers',
         }
     });
     $scope.$on('block', function(event, data) {
-        if (!$scope.filtered_transactions || !$scope.filtered_transactions.list.length) return;
+        if (!$scope.filtered_transactions || !$scope.filtered_transactions.list || !$scope.filtered_transactions.list.length) return;
         $scope.$apply(function() {
             for (var i = 0; i < $scope.filtered_transactions.list.length; i++) {
                 if (!$scope.filtered_transactions.list[i].block_height) {
