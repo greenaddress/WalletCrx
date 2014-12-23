@@ -24,7 +24,7 @@
                 <div class="mnemonic info ng-cloak" ng-show="signup.mnemonic_encrypted || signup.mnemonic">
                 <span ng-bind="signup.mnemonic_encrypted || signup.mnemonic" ></span>
                 
-                <a ng-hide="wallet.nohw_chosen" ng-click="signup.usb_hwseed_modal()" tooltip-placement="left" tooltip="Click to use hardware wallet seed instead" class="btn btn-default btn-xs" style="float: right; position: relative; top: 14px; left: 18px;"><i class="glyphicon glyphicon-transfer"></i></a>
+                <a ng-hide="wallet.nohw_chosen" ng-click="signup.usb_hwseed_modal()"  ng-class="{disabled: signup.hw_wallet_processing}" tooltip-placement="left" tooltip="Click to use hardware wallet seed instead" class="btn btn-default btn-xs" style="float: right; position: relative; top: 14px; left: 18px;"><i class="glyphicon glyphicon-transfer"></i></a>
                 
                 </div>
                 <div class="mnemonic info" ng-hide="signup.mnemonic">Génération de la passphrase mnémonique</div>
@@ -44,10 +44,10 @@
                 </label>
                 <br>
                 <button class="btn btn-default btn-block-xs" ng-click="signup.qrmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-qrcode"></i> Voir le QR Code</button>
+
                 
                 
-                
-                <button ng-hide="signup.has_btchip" class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic}"><i class="glyphicon glyphicon-transfer"></i> Write to a hardware wallet</button>
+                <button ng-hide="signup.has_btchip" class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic || signup.hw_wallet_processing}"><i class="glyphicon glyphicon-transfer"></i> Write to a hardware wallet</button>
                 
                 
 

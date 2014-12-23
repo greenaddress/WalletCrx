@@ -71,7 +71,13 @@ angular.module('greenWalletSendControllers',
                         return subaccount.derive(branches.REGULAR);
                     });
                 }
+                var derive_trezor = function() {
+                    return $scope.wallet.trezor_dev.getPublicKey([3 + 0x80000000, $scope.wallet.current_subaccount + 0x80000000]).then(function(result) {
+                        return Bitcoin.HDWallet.fromBase58(result.message.xpub).derive(branches.REGULAR);
+                    })
+                }
                 if ($scope.wallet.hdwallet.priv) derive_fun = derive_hd;
+                else if ($scope.wallet.trezor_dev) derive_fun = derive_trezor;
                 else derive_fun = derive_btchip;
                 var change_branch = derive_fun();
             } else {

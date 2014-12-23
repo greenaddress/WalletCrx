@@ -273,8 +273,23 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         });
     };
 
+    var trezor_dev = null;
+
+    var login_with_trezor = function() {
+        $scope.logging_in = true;
+        state.login_error = undefined;
+        return wallets.login_trezor($scope, trezor_dev).then(function(data) {},
+            function(err) {
+                $rootScope.safeApply(function() {
+                    notices.makeNotice('error', err);
+                    $scope.logging_in = false;
+                });
+            });
+    }
+
     $scope.login_with_hw = function() {
         gaEvent('Login', 'HardwareLogin');
+        if (trezor_dev) { login_with_trezor(); return; }
         btchip.getDevice().then(function(btchip_dev) {
             btchip.promptPin('', function(err, pin) {
                 if (!pin) return;
@@ -328,10 +343,16 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         });
     };
 
-    btchip.getDevice(true).then(function(btchip) {
+    var template = gettext("{hardware_wallet_name} Login");
+    btchip.getDevice('retry').then(function(btchip) {
         btchip.dongle.disconnect_async();
-        state.hw_detected = true;
+        state.hw_detected = template.replace('{hardware_wallet_name}', 'BTChip');
     });
+
+    trezor.getDevice('retry', true).then(function(trezor) {
+        state.hw_detected = template.replace('{hardware_wallet_name}', 'TREZOR');
+        trezor_dev = trezor;
+    })
 
     $scope.read_qr_code = function read_qr_code($event) {
         gaEvent('Login', 'QrScanClicked');
@@ -411,30 +432,5 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 notices.makeNotice('error', (e.desc || e) + suffix);
                 state.login_error = true;
             });
-    }
-
-    if ($location.path() == '/trezor_login') {
-        trezor.getDevice(true).then(function(trezor_dev) {
-            state.trezor_dev = trezor_dev;
-            $scope.login = function() {
-                $scope.logging_in = true;
-                state.login_error = undefined;
-                trezor_dev.getPublicKey([18241 + 0x80000000]).then(function(pubkey) {
-                    var extended = pubkey.message.node.chain_code + pubkey.message.node.public_key;
-                    var path = Bitcoin.CryptoJS.HmacSHA512(extended, 'GreenAddress.it HD wallet path');
-                    path = Bitcoin.CryptoJS.enc.Hex.stringify(path);
-                    return wallets.login_trezor($scope, trezor_dev, path, false, false).then(function(data) {},
-                        function(err) {
-                            $rootScope.safeApply(function() {
-                                state.login_error = err;
-                                $scope.logging_in = false;
-                            });
-                        }).finally(function() { $scope.logging_in = false; });
-                }, function(err) {
-                    state.login_error = err;
-                    $scope.logging_in = false;
-                });
-            }
-        });
     }
 }]);

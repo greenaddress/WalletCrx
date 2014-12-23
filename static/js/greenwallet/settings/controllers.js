@@ -319,8 +319,8 @@ angular.module('greenWalletSettingsControllers',
     setup_2fa('sms');
     setup_2fa('phone');
     setup_2fa('gauth');
-}]).controller('SettingsController', ['$scope', '$q', 'wallets', 'tx_sender', 'notices', '$modal', 'gaEvent', 'storage', '$location', '$timeout', 'bip38', 'mnemonics', 'btchip', 'trezor',
-        function SettingsController($scope, $q, wallets, tx_sender, notices, $modal, gaEvent, storage, $location, $timeout, bip38, mnemonics, btchip, trezor) {
+}]).controller('SettingsController', ['$scope', '$q', 'wallets', 'tx_sender', 'notices', '$modal', 'gaEvent', 'storage', '$location', '$timeout', 'bip38', 'mnemonics', 'btchip', 'trezor', 'hw_detector',
+        function SettingsController($scope, $q, wallets, tx_sender, notices, $modal, gaEvent, storage, $location, $timeout, bip38, mnemonics, btchip, trezor, hw_detector) {
     if (!wallets.requireWallet($scope)) return;
     var userfriendly_blocks = function(num) {
         return gettext("(about %s days: 1 day ≈ 144 blocks)").replace("%s", Math.round(num/144));
@@ -379,7 +379,13 @@ angular.module('greenWalletSettingsControllers',
         usbmodal: function() {
             var is_chrome_app = window.chrome && chrome.storage;
             if (is_chrome_app) {
-                btchip.setupSeed($scope.wallet.mnemonic);
+                hw_detector.waitForHwWallet().then(function() {
+                    trezor.getDevice(true).then(function() {
+                        trezor.recovery($scope.wallet.mnemonic);
+                    }, function() {
+                        btchip.setupSeed($scope.wallet.mnemonic);
+                    });
+                })
             } else {
                 trezor.recovery($scope.wallet.mnemonic);
             }
@@ -1176,7 +1182,7 @@ angular.module('greenWalletSettingsControllers',
             for (var i = 0; i < this.existing.length; i++) {
                 pointers.push(this.existing[i].pointer);
             }
-            pointers.sort();
+            pointers.sort(function(a,b) { return a-b; });
             for (var i = 1; i < pointers.length; i++) {
                 if (pointers[i] > pointers[i-1] + 1) {
                     min_unused_pointer = pointers[i-1] + 1;
@@ -1211,6 +1217,17 @@ angular.module('greenWalletSettingsControllers',
                 };
             });
         },
+        _derive_trezor: function(pointer) {
+            return $scope.wallet.trezor_dev.getPublicKey([3 + 0x80000000, pointer + 0x80000000]).then(function(result) {
+                var cc = result.message.node.chain_code, pk = result.message.node.public_key;
+                cc = cc.toHex ? cc.toHex() : cc;
+                pk = pk.toHex ? pk.toHex() : pk;
+                return {
+                    pub: pk,
+                    chaincode: cc
+                };
+            })
+        },
         create_new_2of3: function() {
             var that = this, min_unused_pointer = null, pointers = [];
             that.adding_subwallet = true;
@@ -1243,6 +1260,7 @@ angular.module('greenWalletSettingsControllers',
 
                         var min_unused_pointer = that._get_min_unused_pointer();
                         if ($scope.wallet.hdwallet.priv) var derive_fun = that._derive_hd;
+                        else if ($scope.wallet.trezor_dev) var derive_fun = that._derive_trezor;
                         else var derive_fun = that._derive_btchip;
                         return derive_xpub(min_unused_pointer).then(function(xpub) {
                             var scope = angular.extend($scope.$new(), {
@@ -1287,6 +1305,7 @@ angular.module('greenWalletSettingsControllers',
             var that = this, min_unused_pointer = this._get_min_unused_pointer();
             that.adding_subwallet = true;
             if ($scope.wallet.hdwallet.priv) var derive_fun = that._derive_hd;
+            else if ($scope.wallet.trezor_dev) var derive_fun = that._derive_trezor;
             else var derive_fun = that._derive_btchip;
             derive_fun(min_unused_pointer).then(function(hdhex) {
                 return tx_sender.call('http://greenaddressit.com/txs/create_subaccount',
@@ -1298,11 +1317,11 @@ angular.module('greenWalletSettingsControllers',
                     that.existing.push({type: 'simple', name: that.new_label,
                         pointer: min_unused_pointer, receiving_id: receiving_id})
                     that.new_label = '';
+                    $rootScope.safeApply(function() { that.adding_subwallet = false; });
                 });
             }).catch(function(e) {
                 notices.makeNotice('error', e.desc || e);
-            }).finally(function() {
-                that.adding_subwallet = false;
+                $rootScope.safeApply(function() { that.adding_subwallet = false; });
             });
         },
         start_rename: function(subaccount) {

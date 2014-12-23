@@ -261,12 +261,12 @@ Bitcoin.scrypt = function(passwd, salt, N, r, p, dkLen) {
 /**
  * Private key encoded per BIP-38 (password encrypted, checksum,  base58)
  */
-Bitcoin.ECKey.prototype.getEncryptedFormat = function (passphrase) {
-    return Bitcoin.BIP38.encode(this, passphrase);
+Bitcoin.ECKey.prototype.getEncryptedFormat = function (passphrase, network) {
+    return Bitcoin.BIP38.encode(this, passphrase, network);
 }
 
-Bitcoin.ECKey.decodeEncryptedFormat = function (base58Encrypted, passphrase) {
-    return Bitcoin.BIP38.decode(base58Encrypted, passphrase);
+Bitcoin.ECKey.decodeEncryptedFormat = function (base58Encrypted, passphrase, cur_net) {
+    return Bitcoin.BIP38.decode(base58Encrypted, passphrase, cur_net);
 }
 
 Bitcoin.CryptoJS.AES.decryptCompat = function(bytes, key, opts) {
@@ -387,9 +387,9 @@ Bitcoin.BIP38 = (function () {
    * Private key encoded per BIP-38 (password encrypted, checksum,  base58)
    * @author scintill
    */
-  BIP38.encode = function (eckey, passphrase) {
+  BIP38.encode = function (eckey, passphrase, cur_net) {
     var privKeyBytes = eckey.getPrivateKeyByteArray();
-    var address = eckey.getAddress().toString();
+    var address = eckey.getAddress(Bitcoin.network[cur_net].addressVersion).toString();
 
     // compute sha256(sha256(address)) and take first 4 bytes
     var salt = sha256(sha256(address)).slice(0, 4);
@@ -415,7 +415,7 @@ Bitcoin.BIP38 = (function () {
    * Parse a wallet import format private key contained in a string.
    * @author scintill
    */
-  BIP38.decode = function (base58Encrypted, passphrase) {
+  BIP38.decode = function (base58Encrypted, passphrase, cur_net) {
     var hex_uint8, hex;
     try {
       hex_uint8 = Bitcoin.base58.decode(base58Encrypted);
@@ -463,7 +463,7 @@ Bitcoin.BIP38 = (function () {
     var verifyHashAndReturn = function() {
       var tmpkey = new Bitcoin.ECKey(decrypted, isCompPoint);
 
-      var address = tmpkey.getAddress();
+      var address = tmpkey.getAddress(Bitcoin.network[cur_net].addressVersion);
       checksum = sha256(sha256(address.toString()));
 
       if (checksum[0] != hex[3] || checksum[1] != hex[4] || checksum[2] != hex[5] || checksum[3] != hex[6]) {
