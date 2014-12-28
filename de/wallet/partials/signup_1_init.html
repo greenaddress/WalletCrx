@@ -37,7 +37,7 @@
 
             <div class="create-modal-footer" ng-hide="signup.unexpected_error">
                 <label for="checkbox-confirmation">
-                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Ich bestätige, dass meine Passphrase gespeichert und gesichert ist, und akzeptiere die 
+                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation" ng-disabled="signup.hw_wallet_processing"> Ich bestätige, dass meine Passphrase gespeichert und gesichert ist, und akzeptiere die 
                     
                     <a href="https://greenaddress.it/tos/" target="_blank">Allgemeinen Geschäftsbedingungen</a>
                     

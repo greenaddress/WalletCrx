@@ -37,7 +37,7 @@
 
             <div class="create-modal-footer" ng-hide="signup.unexpected_error">
                 <label for="checkbox-confirmation">
-                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Jag bekräftar att min lösenfras är sparad &amp; säker och jag accepterar 
+                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation" ng-disabled="signup.hw_wallet_processing"> Jag bekräftar att min lösenfras är sparad &amp; säker och jag accepterar 
                     
                     <a href="https://greenaddress.it/tos/" target="_blank">Villkor</a>
                     

@@ -568,7 +568,7 @@ angular.module('greenWalletServices', [])
         }).finally(function() { $rootScope.decrementLoading(); });
         return d.promise
     };
-    var _sign_and_send_tx = function($scope, data, priv_der, twofactor, notify, progress_cb, send_after) {
+    walletsService.sign_and_send_tx = function($scope, data, priv_der, twofactor, notify, progress_cb, send_after) {
         var d = $q.defer();
         var tx = Bitcoin.Transaction.deserialize(data.tx);
         var signatures = [], device_deferred = null, signed_n = 0;
@@ -904,8 +904,17 @@ angular.module('greenWalletServices', [])
         } else {
             var d_all = $q.all(signatures);
         }
-        send_after.then(function() {
-            d_all.then(function(signatures) {
+        var do_send = function() {
+            return d_all.then(function(signatures) {
+                if (!twofactor && data.requires_2factor) {
+                    return walletsService.get_two_factor_code($scope, 'send_tx').then(function(twofac_data) {
+                        return [signatures, twofac_data];
+                    });
+                } else {
+                    return [signatures, twofactor];
+                }
+            }).then(function(signatures_twofactor) {
+                var signatures = signatures_twofactor[0], twofactor = signatures_twofactor[1];
                 tx_sender.call("http://greenaddressit.com/vault/send_tx", signatures, twofactor||null).then(function(data) {
                     d.resolve();
                     if (!twofactor && $scope) {
@@ -923,7 +932,8 @@ angular.module('greenWalletServices', [])
                     sound.play(BASE_URL + "/static/sound/wentwrong.mp3", $scope);
                 });
             }, d.reject);
-        }, d.reject);
+        }
+        send_after.then(do_send, d.reject);
         return d.promise;
     }
     walletsService.getTwoFacConfig = function($scope, force) {
@@ -1010,17 +1020,6 @@ angular.module('greenWalletServices', [])
             }
         });
         return deferred.promise;
-    }
-    walletsService.sign_and_send_tx = function($scope, data, priv_der, twofac_data, notify, progress_cb, send_after) {
-        if ($scope && data.requires_2factor) {
-            var d = $q.defer();
-            walletsService.get_two_factor_code($scope, 'send_tx').then(function(twofac_data) {
-                d.resolve(_sign_and_send_tx($scope, data, priv_der, twofac_data, notify, progress_cb, send_after));
-            }, function(err) { d.reject(err); });
-            return d.promise;
-        } else {
-            return _sign_and_send_tx($scope, data, priv_der, twofac_data, notify, progress_cb, send_after);
-        }
     }
     walletsService.addCurrencyConversion = function($scope, model_name) {
         var div = {'BTC': 1, 'mBTC': 1000, 'µBTC': 1000000, 'bits':1000000}[$scope.wallet.unit];
@@ -2350,7 +2349,17 @@ angular.module('greenWalletServices', [])
         );
     };
 
-
+    var handleError = function(e) {
+        var message;
+        if (e == 'Opening device failed') {
+            message = gettext("Device could not be opened. Make sure you don't have any TREZOR client running in another tab or browser window!");
+        } else {
+            message = e;
+        }
+        $rootScope.safeApply(function() {
+            notices.makeNotice('error', message);
+        });
+    };
 
     return {
         getDevice: function(noModal, silentFailure) {
@@ -2367,7 +2376,7 @@ angular.module('greenWalletServices', [])
                             $interval.cancel(tick);
                         }
                     });
-                };
+                }
             }
 
             trezor.load({configUrl: '/static/trezor_config_signed.bin'}).then(function(api) {
@@ -2386,8 +2395,9 @@ angular.module('greenWalletServices', [])
                                 trezor_dev = dev;
                                 trezor_dev.on('pin', promptPin);
                                 trezor_dev.on('passphrase', promptPassphrase);
+                                trezor_dev.on('error', handleError);
                                 deferred.resolve(trezor_dev);
-                            })
+                            });
                         } else if (noModal) {
                             $interval.cancel(tick);
                             deferred.reject();
@@ -2433,8 +2443,9 @@ angular.module('greenWalletServices', [])
                         modal.close();
                         d.resolve();
                     }).catch(function(err) {
-                        notices.makeNotice('error', err);
                         this.setting_up = false;
+                        if (err.message) return;  // handled by handleError in services.js
+                        notices.makeNotice('error', err);
                     });
                 },
                 reuse: function() {
@@ -2727,7 +2738,7 @@ angular.module('greenWalletServices', [])
                             $interval.cancel(tick);
                         });
                     });
-                };
+                }
                 if (noModal) {
                     if (noModal == 'retry') return;
                     $interval.cancel(tick);

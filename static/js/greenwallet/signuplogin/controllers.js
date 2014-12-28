@@ -281,8 +281,9 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
         return wallets.login_trezor($scope, trezor_dev).then(function(data) {},
             function(err) {
                 $rootScope.safeApply(function() {
-                    notices.makeNotice('error', err);
                     $scope.logging_in = false;
+                    if (err.message) return;  // handled by TREZOR handleError in services.js
+                    notices.makeNotice('error', err);
                 });
             });
     }

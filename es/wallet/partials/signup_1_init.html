@@ -37,7 +37,7 @@
 
             <div class="create-modal-footer" ng-hide="signup.unexpected_error">
                 <label for="checkbox-confirmation">
-                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation"> Confirmo que he guardado mi clave de forma segura y estoy de acuerdo con los 
+                    <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation" ng-disabled="signup.hw_wallet_processing"> Confirmo que he guardado mi clave de forma segura y estoy de acuerdo con los 
                     
                     <a href="https://greenaddress.it/tos/" target="_blank">Términos del Servicio</a>
                     
