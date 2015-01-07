@@ -2361,6 +2361,23 @@ angular.module('greenWalletServices', [])
         });
     };
 
+    var handleButton = function(dev) {
+        var modal = $modal.open({
+            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_trezor_confirm_button.html',
+            size: 'sm',
+            windowClass: 'pinmodal',
+            backdrop: 'static',
+            keyboard: false
+        });
+
+        dev.once('receive', function () {
+            modal.close();
+        });
+        dev.once('error', function () {
+            modal.close();
+        });
+    }
+
     return {
         getDevice: function(noModal, silentFailure) {
             var deferred = $q.defer();
@@ -2396,6 +2413,7 @@ angular.module('greenWalletServices', [])
                                 trezor_dev.on('pin', promptPin);
                                 trezor_dev.on('passphrase', promptPassphrase);
                                 trezor_dev.on('error', handleError);
+                                trezor_dev.on('button', function() { handleButton(dev); });
                                 deferred.resolve(trezor_dev);
                             });
                         } else if (noModal) {
