@@ -112,7 +112,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 var process = function(mnemonic) {
                     return mnemonics.toSeed(mnemonic).then(function(seed) {
                         return mnemonics.toSeed(mnemonic, 'greenaddress_path').then(function(path_seed) {
-                            return {seed: seed, path_seed: path_seed, mnemonic: state.mnemonic};
+                            return {seed: seed, path_seed: path_seed, mnemonic: mnemonic};
                         }, undefined, function(progress) {
                             state.seed_progress = Math.round(50 + progress/2);
                         });

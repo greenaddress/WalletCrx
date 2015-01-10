@@ -2252,8 +2252,8 @@ angular.module('greenWalletServices', [])
         }
         return deferred.promise;
     }};
-}]).factory('hw_detector', ['$q', 'trezor', 'btchip', '$interval', '$rootScope', '$modal',
-        function($q, trezor, btchip, $interval, $rootScope, $modal) {
+}]).factory('hw_detector', ['$q', 'trezor', 'btchip', '$timeout', '$rootScope', '$modal',
+        function($q, trezor, btchip, $timeout, $rootScope, $modal) {
     return {
         waitForHwWallet: function() {
             var modal, success = false, showModal = function() {
@@ -2265,7 +2265,6 @@ angular.module('greenWalletServices', [])
                         modal = $modal.open(options);
                         modal.result.finally(function() {
                             if (!success) d.reject();
-                            $interval.cancel(tick);
                         });
                     });
                 };
@@ -2276,17 +2275,14 @@ angular.module('greenWalletServices', [])
                 success = true;
                 if (modal) {
                     modal.close();  // modal close cancels the tick
-                } else {
-                    $interval.cancel(tick);
                 }
             }
             var check = function() {
                 trezor.getDevice(true).then(function() {
                     doSuccess();
                 }, function(err) {
-                    if (err && err.pluginLoadFailed) {
+                    if (err && (err.pluginLoadFailed || err.outdatedFirmware)) {
                         // don't retry on unrecoverable errors
-                        $interval.cancel(tick);
                         d.reject();
                         return;
                     }
@@ -2294,10 +2290,10 @@ angular.module('greenWalletServices', [])
                         doSuccess();
                     }, function() {
                         showModal();
+                        $timeout(check, 1000);
                     });
                 })
             }
-            var tick = $interval(check, 1000);
             check();
             return d.promise;
         }
@@ -2396,10 +2392,48 @@ angular.module('greenWalletServices', [])
                 }
             }
 
-            trezor.load({configUrl: '/static/trezor_config_signed.bin'}).then(function(api) {
+            var is_chrome_app = window.chrome && chrome.storage, transport;
+            if (is_chrome_app) {
+                var plugin_d = window.trezor.load({configUrl: '/static/trezor_config_signed.bin'});
+            } else {
+                var trezor = window.trezor;
+
+                function loadHttp() {
+                    console.log('[app] Attempting to load http transport');
+                    return trezor.HttpTransport.connect('https://localhost:21324').then(
+                        function (info) {
+                            console.log('[app] Loading http transport successful',
+                                        info);
+                            return new trezor.HttpTransport('https://localhost:21324');
+                        },
+                        function (err) {
+                            console.warn('[app] Loading http transport failed', err);
+                            throw err;
+                        }
+                    );
+                }
+
+                function loadPlugin() {
+                    console.log('[app] Attempting to load plugin transport');
+                    return trezor.PluginTransport.loadPlugin().then(function (plugin) {
+                        return new trezor.PluginTransport(plugin);
+                    });
+                }
+
+                plugin_d = loadHttp().catch(loadPlugin).then(function(plugin) {
+                    transport = plugin;
+                    return trezor.http('/static/trezor_config_signed.bin').then(function(config) {
+                        return plugin.configure(config);
+                    }).then(function() {
+                        return plugin;
+                    })
+                });
+            }
+            plugin_d.then(function(api) {
                 trezor_api = api;
                 tick = $interval(function() {
-                    $q.when(trezor_api.devices()).then(function(devices) {
+                    var enumerate_fun = is_chrome_app ? 'devices' : 'enumerate';
+                    $q.when(trezor_api[enumerate_fun]()).then(function(devices) {
                         if (devices.length) {
                             if (noModal) {
                                 $interval.cancel(tick);
@@ -2408,13 +2442,30 @@ angular.module('greenWalletServices', [])
                             } else {
                                 $interval.cancel(tick);
                             }
-                            $q.when(trezor_api.open(devices[0])).then(function(dev) {
-                                trezor_dev = dev;
-                                trezor_dev.on('pin', promptPin);
-                                trezor_dev.on('passphrase', promptPassphrase);
-                                trezor_dev.on('error', handleError);
-                                trezor_dev.on('button', function() { handleButton(dev); });
-                                deferred.resolve(trezor_dev);
+                            var acquire_fun = is_chrome_app ? 'open' : 'acquire';
+                            $q.when(trezor_api[acquire_fun](devices[0])).then(function(dev_) {
+                                if (!is_chrome_app) dev_ = new trezor.Session(transport, dev_.session);
+                                deferred.resolve(dev_.initialize().then(function(init_res) {
+                                    var outdated = false;
+                                    if (init_res.message.major_version < 1) outdated = true;
+                                    else if (init_res.message.major_version == 1 &&
+                                             init_res.message.minor_version < 3) outdated = true;
+                                    if (outdated) {
+                                        notices.makeNotice('error', gettext("Outdated firmware. Please upgrade to at least 1.3.0 at http://mytrezor.com/"));
+                                        return $q.reject({outdatedFirmware: true});
+                                    } else {
+                                        return dev_;
+                                    }
+                                }).then(function(dev) {
+                                    trezor_dev = dev;
+                                    trezor_dev.on('pin', promptPin);
+                                    trezor_dev.on('passphrase', promptPassphrase);
+                                    trezor_dev.on('error', handleError);
+                                    trezor_dev.on('button', function () {
+                                        handleButton(dev);
+                                    });
+                                    return trezor_dev;
+                                }));
                             });
                         } else if (noModal) {
                             $interval.cancel(tick);
