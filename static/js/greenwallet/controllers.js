@@ -181,6 +181,11 @@ angular.module('greenWalletControllers', [])
         };
     };
     clearwallet();
+    $scope.$watch('wallet.current_subaccount', function(newValue, oldValue) {
+        if (newValue !== oldValue && newValue !== undefined) {
+            wallets.updateAppearance($scope, "current_subaccount", newValue);
+        }
+    });
     wallets.set_last_fiat_update($scope);
     $scope.processWalletVars();
     $scope.$watch('wallet.current_subaccount', function(newValue, oldValue) {

@@ -283,7 +283,8 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
                 $rootScope.safeApply(function() {
                     $scope.logging_in = false;
                     if (err.message) return;  // handled by TREZOR handleError in services.js
-                    notices.makeNotice('error', err);
+                    notices.makeNotice('error', 'Account not found. Please create a new account with your TREZOR.');
+                    $location.url('/create/');
                 });
             });
     }

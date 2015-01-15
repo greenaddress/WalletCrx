@@ -213,7 +213,7 @@ angular.module('greenWalletServices', [])
                 $scope.wallet.privacy = data.privacy;
                 $scope.wallet.limits = data.limits;
                 $scope.wallet.subaccounts = data.subaccounts;
-                $scope.wallet.current_subaccount = 0;
+                $scope.wallet.current_subaccount = $scope.wallet.appearance.current_subaccount || 0;
                 $scope.wallet.unit = $scope.wallet.appearance.unit || 'mBTC';
                 $scope.wallet.cache_password = data.cache_password;
                 $scope.wallet.fiat_exchange = data.exchange;
@@ -2924,20 +2924,24 @@ angular.module('greenWalletServices', [])
                                     console.log('reset pin error ' + error);
                                     if (error.indexOf("6982") >= 0 || error.indexOf("63c") >= 0) {
                                         // setMsg("Dongle is locked - enter the PIN");
-                                        scope.btchip.resets_remaining -= 1;
+                                        if (error.indexOf("63c") >= 0) {
+                                            scope.btchip.resets_remaining = Number.parseInt(error[error.indexOf("63c") + 3]);
+                                        } else {
+                                            scope.btchip.resets_remaining -= 1;
+                                        }
                                     } else if (error.indexOf("6985") >= 0) {
                                         // var setupText = "Dongle is not set up";
                                         scope.btchip.resets_remaining = 0;
                                     }
                                     scope.btchip.replug_required = true;
                                     if (scope.btchip.resets_remaining) {
-                                        service.getDevice(true).then(function(btchip_) {
+                                        service.getDevice('retry').then(function(btchip_) {
                                             btchip = btchip_;
                                             scope.btchip.replug_required = false;
                                             attempt();
                                         })
                                     } else {
-                                        service.getDevice(true).then(function(btchip_) {
+                                        service.getDevice('retry').then(function(btchip_) {
                                             btchip = btchip_;
                                             scope.btchip.replug_required = false;
                                             scope.btchip.resetting = false;

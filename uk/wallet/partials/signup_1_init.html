@@ -8,13 +8,22 @@
                     
                     <a href="" ng-click="logout()">Вхід у Ваш гаманець</a></span>
                     
-                Крок 1 із 4
+                Крок 1 із <span ng-hide="signup.trezor_detected">4</span><span ng-show="signup.trezor_detected">3</span>
                 <div class="progress">
                     <div class="progress-bar progress-bar-success" role="progressbar" style="width: 25%"></div>
                 </div>
             </div>
 
-            <div class="create-modal-body" ng-hide="signup.unexpected_error">
+            <div class="create-modal-body" ng-show="signup.trezor_detected">
+                <div class="title">Use TREZOR to create a GreenAddress wallet<br>
+                    <small ng-hide="signup.empty_trezor">Please finish this 3-step account setup to fully secure it against intruders</small>
+                    <small ng-show="signup.empty_trezor">Please go to <a href="https://mytrezor.com/">myTREZOR</a> first to set up your device.</small>
+                </div>
+
+                <p style="text-align: center;">(You can also disconnect the TREZOR and refresh this page to create a wallet without the device.)</p>
+            </div>
+
+            <div class="create-modal-body" ng-hide="signup.unexpected_error || signup.trezor_detected">
                 <div class="title">Тепер ви гордий власник гаманця bitcoin<br>
                     <small>Будь-ласка, завершіть це 4-крокове налаштування Вашого акаунта для  повного захисту від зловмисників</small>
                 </div>
@@ -35,7 +44,7 @@
                 <p>Будь-ласка, запишіть ці слова і бережіть їх у надійному місці, оскільки вони не можуть бути відновлені. <b>Ми ніде не зберігаємо вище вказану інформацію, ми не можемо допомогти Вам відновити її!</b></p>
             </div>
 
-            <div class="create-modal-footer" ng-hide="signup.unexpected_error">
+            <div class="create-modal-footer" ng-hide="signup.unexpected_error || signup.empty_trezor">
                 <label for="checkbox-confirmation">
                     <input type="checkbox" ng-model="signup.secured_confirmed" id="checkbox-confirmation" ng-disabled="signup.hw_wallet_processing"> Я підтверджую, що моя фраза-пароль збережена &amp; в безпечному місці і я згоден/згідна з 
                     
@@ -47,7 +56,7 @@
 
                 
                 
-                <button ng-hide="signup.has_btchip" class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic || signup.hw_wallet_processing}"><i class="glyphicon glyphicon-transfer"></i> Write to a hardware wallet</button>
+                <button ng-hide="signup.has_btchip" class="btn btn-default btn-block-xs" ng-click="signup.usbmodal()" ng-class="{disabled:!signup.mnemonic || signup.hw_wallet_processing}"><i class="glyphicon glyphicon-transfer"></i> Write to a BTChip</button>
                 
                 
 
