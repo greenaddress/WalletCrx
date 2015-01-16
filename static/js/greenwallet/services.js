@@ -2255,24 +2255,26 @@ angular.module('greenWalletServices', [])
 }]).factory('hw_detector', ['$q', 'trezor', 'btchip', '$timeout', '$rootScope', '$modal',
         function($q, trezor, btchip, $timeout, $rootScope, $modal) {
     return {
-        waitForHwWallet: function() {
-            var modal, success = false, showModal = function() {
-                if (!modal) {
-                    $rootScope.safeApply(function() {
-                        var options = {
-                            templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_usb_device.html',
-                        };
-                        modal = $modal.open(options);
-                        modal.result.finally(function() {
-                            if (!success) d.reject();
-                        });
+        success: false,
+        showModal: function(d) {
+            var that = this;
+            if (!that.modal) {
+                $rootScope.safeApply(function() {
+                    var options = {
+                        templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_usb_device.html',
+                    };
+                    that.modal = $modal.open(options);
+                    that.modal.result.finally(function() {
+                        if (!that.success) d.reject();
                     });
-                };
+                });
             };
-            var d = $q.defer();
+        },
+        waitForHwWallet: function() {
+            var d = $q.defer(), that = this;
             var doSuccess = function() {
                 d.resolve();
-                success = true;
+                that.success = true;
                 if (modal) {
                     modal.close();  // modal close cancels the tick
                 }
@@ -2289,7 +2291,8 @@ angular.module('greenWalletServices', [])
                     btchip.getDevice(true).then(function() {
                         doSuccess();
                     }, function() {
-                        showModal();
+                        // can be set to success by signup (if trezor got connected)
+                        if (!that.success) that.showModal(d);
                         $timeout(check, 1000);
                     });
                 })
@@ -2300,9 +2303,11 @@ angular.module('greenWalletServices', [])
     }
 }]).factory('trezor', ['$q', '$interval', '$modal', 'notices', '$rootScope', 'focus',
         function($q, $interval, $modal, notices, $rootScope, focus) {
+
+    var trezor_api, transport, trezor;
+
     var promptPin = function(type, callback) {
         var scope, modal;
-
         scope = angular.extend($rootScope.$new(), {
             pin: '',
             type: type
@@ -2366,11 +2371,14 @@ angular.module('greenWalletServices', [])
             keyboard: false
         });
 
+        dev.once('pin', function () {
+            try { modal.close(); } catch (e) {}
+        });
         dev.once('receive', function () {
-            modal.close();
+            try { modal.close(); } catch (e) {}
         });
         dev.once('error', function () {
-            modal.close();
+            try { modal.close(); } catch (e) {}
         });
     }
 
@@ -2392,11 +2400,13 @@ angular.module('greenWalletServices', [])
                 }
             }
 
-            var is_chrome_app = window.chrome && chrome.storage, transport;
-            if (is_chrome_app) {
+            var is_chrome_app = window.chrome && chrome.storage;
+            if (trezor_api) {
+                var plugin_d = $q.when(trezor_api);
+            } else if (is_chrome_app) {
                 var plugin_d = window.trezor.load({configUrl: '/static/trezor_config_signed.bin'});
             } else {
-                var trezor = window.trezor;
+                trezor = window.trezor;
 
                 function loadHttp() {
                     console.log('[app] Attempting to load http transport');
@@ -2420,7 +2430,7 @@ angular.module('greenWalletServices', [])
                     });
                 }
 
-                plugin_d = loadHttp().catch(loadPlugin).then(function(plugin) {
+                var plugin_d = loadHttp().catch(loadPlugin).then(function(plugin) {
                     transport = plugin;
                     return trezor.http('/static/trezor_config_signed.bin').then(function(config) {
                         return plugin.configure(config);
@@ -2466,9 +2476,11 @@ angular.module('greenWalletServices', [])
                                     });
                                     return trezor_dev;
                                 }));
+                            }, function(err) {
+                                handleError('Opening device failed');
                             });
                         } else if (noModal) {
-                            $interval.cancel(tick);
+                            if (noModal == 'retry') return;
                             deferred.reject();
                         } else showModal();
                     }, function() {
@@ -2543,9 +2555,9 @@ angular.module('greenWalletServices', [])
             });
             return d.promise;
         }
-    }
-}]).factory('btchip', ['$q', '$interval', '$modal', '$rootScope', 'mnemonics', 'notices', 'focus', 'cordovaReady',
-        function($q, $interval, $modal, $rootScope, mnemonics, notices, focus, cordovaReady) {
+    };
+}]).factory('btchip', ['$q', '$interval', '$modal', '$rootScope', 'mnemonics', 'notices', 'focus', 'cordovaReady', '$injector',
+        function($q, $interval, $modal, $rootScope, mnemonics, notices, focus, cordovaReady, $injector) {
     var cardFactory;
     if (window.ChromeapiPlugupCardTerminalFactory) {
         cardFactory = new ChromeapiPlugupCardTerminalFactory();
@@ -2803,6 +2815,7 @@ angular.module('greenWalletServices', [])
                             pinNotCancelable = true;
                         }
                         modal = $modal.open(options);
+                        $injector.get('hw_detector').modal = modal;
                         modal.result.finally(function() {
                             $interval.cancel(tick);
                         });
