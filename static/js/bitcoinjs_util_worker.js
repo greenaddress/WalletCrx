@@ -3,13 +3,20 @@ importScripts('secp256k1.js');
 importScripts('bitcoinjs.min.js');
 Module._secp256k1_start(3);
 Bitcoin.ECKey.prototype.getPub = function(compressed) {
+    if (this.pub) return this.pub.getEncoded(this.compressed);
     if (compressed === undefined) compressed = this.compressed;
 
     var out = Module._malloc(128);
     var out_s = Module._malloc(4);
     var secexp = Module._malloc(32);
     var start = this.priv.toByteArray().length - 32;
-    writeArrayToMemory(this.priv.toByteArray().slice(start), secexp);
+    if (start >= 0) {  // remove excess zeroes
+        var slice = this.priv.toByteArray().slice(start);
+    } else {  // add missing zeroes
+        var slice = this.priv.toByteArray();
+        while (slice.length < 32) slice.unshift(0);
+    }
+    writeArrayToMemory(slice, secexp);
     setValue(out_s, 128, 'i32');
 
     Module._secp256k1_ec_pubkey_create(out, out_s, secexp, compressed ? 1 : 0);
@@ -38,7 +45,13 @@ funcs = {
         var msg = Module._malloc(32);
         var seckey = Module._malloc(32);
         var start = key.priv.toByteArray().length - 32;
-        writeArrayToMemory(key.priv.toByteArray().slice(start), seckey);
+        if (start >= 0) {  // remove excess zeroes
+            var slice = key.priv.toByteArray().slice(start);
+        } else {  // add missing zeroes
+            var slice = key.priv.toByteArray();
+            while (slice.length < 32) slice.unshift(0);
+        }
+        writeArrayToMemory(slice, seckey);
         setValue(siglen_p, 128, 'i32');
         for (var i = 0; i < 32; ++i) {
             setValue(msg + i, data.hash[i], 'i8');
