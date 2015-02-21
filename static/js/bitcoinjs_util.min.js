@@ -165,47 +165,48 @@ if (self.cordova && cordova.platformId == 'ios') {
         return deferred.promise;
     }
 } else {
-    angular.element(document).ready(function() {
-        var ready = false;
-        var script = document.createElement('script')
-        script.type = 'text/javascript';
-        script.src = '/static/js/secp256k1.js';
-        script.onload = script.onreadystatechange = function () {
-            if (!ready && (!this.readyState || this.readyState == 'complete')) {
-                ready = true;
-                Module._secp256k1_start(3);
+    if (!self.cordova && self.angular) {
+        angular.element(document).ready(function() {
+            var ready = false;
+            var script = document.createElement('script')
+            script.type = 'text/javascript';
+            script.src = '/static/js/secp256k1.js';
+            script.onload = script.onreadystatechange = function () {
+                if (!ready && (!this.readyState || this.readyState == 'complete')) {
+                    ready = true;
+                    Module._secp256k1_start(3);
+                }
+            };
+            var tag = document.getElementsByTagName('script')[0];
+            tag.parentNode.insertBefore(script, tag);
+        });
+
+        Bitcoin.ECKey.prototype.getPub = function(compressed) {
+            if (compressed === undefined) compressed = this.compressed;
+
+            var out = Module._malloc(128);
+            var out_s = Module._malloc(4);
+            var secexp = Module._malloc(32);
+            var start = this.priv.toByteArray().length - 32;
+            if (start >= 0) {  // remove excess zeroes
+                var slice = this.priv.toByteArray().slice(start);
+            } else {  // add missing zeroes
+                var slice = this.priv.toByteArray();
+                while (slice.length < 32) slice.unshift(0);
             }
+            writeArrayToMemory(slice, secexp);
+            setValue(out_s, 128, 'i32');
+
+            Module._secp256k1_ec_pubkey_create(out, out_s, secexp, compressed ? 1 : 0);
+
+            var ret = [];
+            for (var i = 0; i < getValue(out_s, 'i32'); ++i) {
+                ret[i] = getValue(out+i, 'i8') & 0xff;
+            }
+
+            return Bitcoin.ECPubKey(ret, compressed)
         };
-        var tag = document.getElementsByTagName('script')[0];
-        tag.parentNode.insertBefore(script, tag);
-    });
-
-    Bitcoin.ECKey.prototype.getPub = function(compressed) {
-        if (this.pub) return this.pub.getEncoded(this.compressed);
-        if (compressed === undefined) compressed = this.compressed;
-
-        var out = Module._malloc(128);
-        var out_s = Module._malloc(4);
-        var secexp = Module._malloc(32);
-        var start = this.priv.toByteArray().length - 32;
-        if (start >= 0) {  // remove excess zeroes
-            var slice = this.priv.toByteArray().slice(start);
-        } else {  // add missing zeroes
-            var slice = this.priv.toByteArray();
-            while (slice.length < 32) slice.unshift(0);
-        }
-        writeArrayToMemory(slice, secexp);
-        setValue(out_s, 128, 'i32');
-
-        Module._secp256k1_ec_pubkey_create(out, out_s, secexp, compressed ? 1 : 0);
-
-        var ret = [];
-        for (var i = 0; i < getValue(out_s, 'i32'); ++i) {
-            ret[i] = getValue(out+i, 'i8') & 0xff;
-        }
-
-        return Bitcoin.ECPubKey(ret, compressed)
-    };
+    }
     if (self.Worker && !self.GAIT_IN_WORKER) {
         (function() {
             var worker = new Worker(BASE_URL+"/static/js/bitcoinjs_util_worker.js"), callId = 0,

@@ -309,7 +309,7 @@ angular.module('greenWalletSendControllers',
         },
         add_fee: {'party': 'sender',
                   'per_kb': true,
-                  'amount': satoshisToUnit(10000)},
+                  'amount': ''},
         instant: $routeParams.contact ? (parseContact($routeParams.contact).requires_instant || false) : false,
         recipient: $routeParams.contact ? parseContact($routeParams.contact) : null,
         read_qr_code: function($event)  {
@@ -446,7 +446,7 @@ angular.module('greenWalletSendControllers',
         },
         get_add_fee: function() {
             var add_fee = angular.extend({}, this.add_fee);
-            add_fee.amount = parseInt(this.amount_to_satoshis(add_fee.amount));
+            add_fee.amount = add_fee.amount == '' ? null : parseInt(this.amount_to_satoshis(add_fee.amount));
             return add_fee;
         },
         _encrypt_key: function(key) {

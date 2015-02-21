@@ -571,6 +571,33 @@ angular.module('greenWalletServices', [])
     walletsService.sign_and_send_tx = function($scope, data, priv_der, twofactor, notify, progress_cb, send_after) {
         var d = $q.defer();
         var tx = Bitcoin.Transaction.deserialize(data.tx);
+        var ask_for_confirmation = function() {
+            if (!$scope.send_tx) {
+                // redepositing
+                return $q.when();
+            }
+            var scope = $scope.$new();
+            var in_value = 0, out_value = 0;
+            tx.ins.forEach(function(txin) {
+                var prevtx = Bitcoin.Transaction.deserialize(data.prevout_rawtxs[txin.outpoint.hash]);
+                var prevout = prevtx.outs[txin.outpoint.index];
+                in_value += prevout.value;
+            });
+            tx.outs.forEach(function(txout) {
+                out_value += txout.value;
+            });
+            scope.tx = {
+                fee: in_value - out_value,
+                value: $scope.send_tx.amount_to_satoshis($scope.send_tx.amount),
+                recipient: $scope.send_tx.recipient.name || $scope.send_tx.recipient,
+            };
+            var modal = $modal.open({
+                templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_confirm_tx.html',
+                scope: scope,
+                windowClass: 'twofactor'  // is a 'sibling' to 2fa - show with the same z-index
+            });
+            return modal.result;
+        }
         var signatures = [], device_deferred = null, signed_n = 0;
         var prevoutToPath = function(prevout, trezor, from_subaccount) {
             var path = [];
@@ -904,6 +931,11 @@ angular.module('greenWalletServices', [])
         } else {
             var d_all = $q.all(signatures);
         }
+        d_all = d_all.then(function(signatures) {
+            return ask_for_confirmation().then(function() {
+                return signatures;
+            });
+        }, d.reject);
         var do_send = function() {
             return d_all.then(function(signatures) {
                 if (!twofactor && data.requires_2factor) {
@@ -2385,6 +2417,7 @@ angular.module('greenWalletServices', [])
     return {
         getDevice: function(noModal, silentFailure) {
             var deferred = $q.defer();
+            if (window.cordova) return deferred.promise;
 
             var tick, modal;
             var showModal = function() {

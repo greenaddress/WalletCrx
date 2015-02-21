@@ -3,7 +3,6 @@ importScripts('secp256k1.js');
 importScripts('bitcoinjs.min.js');
 Module._secp256k1_start(3);
 Bitcoin.ECKey.prototype.getPub = function(compressed) {
-    if (this.pub) return this.pub.getEncoded(this.compressed);
     if (compressed === undefined) compressed = this.compressed;
 
     var out = Module._malloc(128);
