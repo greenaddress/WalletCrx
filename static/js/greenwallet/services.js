@@ -205,6 +205,9 @@ angular.module('greenWalletServices', [])
                 if (!('sound' in $scope.wallet.appearance)) {
                     $scope.wallet.appearance.sound = true;
                 }
+                if (!('pgp' in $scope.wallet.appearance)) {
+                    $scope.wallet.appearance.pgp = "";
+                }
                 if (!('altimeout' in $scope.wallet.appearance)) {
                     $scope.wallet.appearance.altimeout = 20;
                 }
@@ -326,6 +329,9 @@ angular.module('greenWalletServices', [])
             }
             if (!('sound' in $scope.wallet.appearance)) {
                 $scope.wallet.appearance.sound = true;
+            }
+            if (!('pgp' in $scope.wallet.appearance)) {
+                $scope.wallet.appearance.pgp = "";
             }
             if (!('altimeout' in $scope.wallet.appearance)) {
                 $scope.wallet.appearance.altimeout = 20;
@@ -573,7 +579,7 @@ angular.module('greenWalletServices', [])
         var tx = Bitcoin.Transaction.deserialize(data.tx);
         var ask_for_confirmation = function() {
             if (!$scope.send_tx) {
-                // redepositing
+                // not all txs support this dialog, like redepositing or sweeping
                 return $q.when();
             }
             var scope = $scope.$new();
@@ -1361,6 +1367,20 @@ angular.module('greenWalletServices', [])
         });
     };
     var disconnected = false, connecting = false, nconn = 0;
+    var monkey_patch_session_nonclean_close_reason = function(session) {
+        // Sometimes e.wasClean is false which causes autobahn to ignore e.code.
+        // We patch it here to be true in case of code != null to avoid missed
+        // concurrent login errors.
+        var onclose_orig = session._websocket.onclose.bind(session._websocket);
+        session._websocket.onclose = function(e) {
+            var mock_e = {
+                wasClean: e.code != null,
+                code: e.code,
+                reason: e.reason
+            };
+            onclose_orig(mock_e);
+        }
+    }
     var connect = function(login_d) {
         global_login_d = login_d;
         if (connecting) return;
@@ -1370,6 +1390,7 @@ angular.module('greenWalletServices', [])
         (function (nc) {
             ab.connect(wss_url,
                 function(s) {
+                    monkey_patch_session_nonclean_close_reason(s);
                     everConnected = true;
                     $http.get((window.root_url||'')+'/token/').then(function(response) {
                         var token = response.data;
@@ -2527,7 +2548,7 @@ angular.module('greenWalletServices', [])
             }).catch(function(e) {
                 if (!silentFailure) {
                     $rootScope.safeApply(function() {
-                        notices.makeNotice('error', gettext('TREZOR initialisation failed') + ': ' + e);
+                        // notices.makeNotice('error', gettext('TREZOR initialisation failed') + ': ' + e);
                     });
                 }
                 deferred.reject({pluginLoadFailed: true})
