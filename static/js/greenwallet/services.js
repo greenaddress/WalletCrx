@@ -1190,6 +1190,16 @@ angular.module('greenWalletServices', [])
             return;
 
         console.log(msg);
+        var is_chrome_app = window.chrome && chrome.storage;
+        if (is_chrome_app) {
+                var opt = {
+                    type: "basic",
+                    title: "GreenAddress Notification",
+                    message: msg,
+                    iconUrl: BASE_URL + "/static/img/logos/logo-greenaddress.png"
+                };
+                chrome.notifications.create("", opt);
+        }
 
         var data = {
             type: type,

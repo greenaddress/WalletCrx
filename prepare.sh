@@ -1,10 +1,12 @@
 #!/bin/bash
 
-if [ $# -eq 0 ]; then
-	echo "No arguments provided."
+if [ $# -eq 0 ] || [ ! $1 = 'mainnet' ] && [ ! $1 = 'testnet' ] && [ ! $1 = 'regtest' ];
+then
+	echo "Invalid or no arguments provided."
 	echo "Usage:"
 	echo "./prepare.sh mainnet"
 	echo "./prepare.sh testnet"
+	echo "./prepare.sh regtest"
 	exit 1
 fi
 
@@ -16,17 +18,16 @@ then
 		cp static/wallet/config_mainnet.js static/wallet/config.js
 		cp manifest_mainnet.json manifest.json
 	fi
+	exit 0
 fi
 
-if [ $1 = 'testnet' ];
+if [ ! -f static/wallet/config_mainnet.js ];
 then
-	echo "preparing for testnet"
-	if [ ! -f static/wallet/config_mainnet.js ];
-	then
-		cp static/wallet/config.js static/wallet/config_mainnet.js
-		cp manifest.json manifest_mainnet.json
-	fi
-	cp static/wallet/config_testnet.js static/wallet/config.js
-	cp manifest_testnet.json manifest.json
+	cp static/wallet/config.js static/wallet/config_mainnet.js
+	cp manifest.json manifest_mainnet.json
 fi
 
+echo "preparing for $1"
+cp static/wallet/config_$1.js static/wallet/config.js
+cp manifest_$1.json manifest.json
+exit 0
