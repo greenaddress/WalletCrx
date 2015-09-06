@@ -9,6 +9,7 @@ No building required.
 For TESTNET run ./prepare.sh testnet
 
 For MAINNET run ./prepare.sh mainnet
+
 For REGTEST run ./prepare.sh regtest
 
 To create a Chrome store zip for mainnet and testnet run ./makePackages.sh
