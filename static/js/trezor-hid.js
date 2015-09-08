@@ -15362,7 +15362,10 @@ Trezor.prototype.version = function () {
 Trezor.prototype.devices = function () {
     return new Promise(function(resolve, reject) {
         chrome.hid.getDevices(
-            {vendorId: 0x534c, productId: 0x0001},
+            {filters:[
+                    {vendorId: 0x2B24, productId: 0x0001},
+                    {vendorId: 0x534c, productId: 0x0001}
+                ]},
             function(devices) {
                 console.log("devices = " + devices);
                 if (!devices || devices.length == 0) {

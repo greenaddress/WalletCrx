@@ -29,6 +29,8 @@
             {"vendorId": 9601,
              "productId": 6152},
             {"vendorId": 21324,
+             "productId": 1},
+            {"vendorId": 11044,
              "productId": 1}
         ]}
     ],
@@ -39,5 +41,5 @@
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress Testnet",
-    "version": "0.0.69"
+    "version": "0.0.70"
 }

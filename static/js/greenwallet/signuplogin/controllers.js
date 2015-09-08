@@ -282,8 +282,8 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
             function(err) {
                 $rootScope.safeApply(function() {
                     $scope.logging_in = false;
-                    if (err.message) return;  // handled by TREZOR handleError in services.js
-                    notices.makeNotice('error', 'Account not found. Please create a new account with your TREZOR.');
+                    if (err.message) return;  // handled by Hardware Wallet handleError in services.js
+                    notices.makeNotice('error', 'Account not found. Please create a new account with your Hardware Wallet.');
                     $location.url('/create/');
                 });
             });
@@ -352,7 +352,7 @@ angular.module('greenWalletSignupLoginControllers', ['greenWalletMnemonicsServic
     });
 
     trezor.getDevice('retry', true).then(function(trezor) {
-        state.hw_detected = template.replace('{hardware_wallet_name}', 'TREZOR');
+        state.hw_detected = template.replace('{hardware_wallet_name}', 'Hardware Wallet');
         trezor_dev = trezor;
     })
 

@@ -2416,7 +2416,7 @@ angular.module('greenWalletServices', [])
     var handleError = function(e) {
         var message;
         if (e == 'Opening device failed') {
-            message = gettext("Device could not be opened. Make sure you don't have any TREZOR client running in another tab or browser window!");
+            message = gettext("Device could not be opened. Make sure you don't have any Hardware Wallet client running in another tab or browser window!");
         } else {
             message = e;
         }
@@ -2518,12 +2518,21 @@ angular.module('greenWalletServices', [])
                             }
                             var acquire_fun = is_chrome_app ? 'open' : 'acquire';
                             $q.when(trezor_api[acquire_fun](devices[0])).then(function(dev_) {
+                                console.log(devices[0]);
                                 if (!is_chrome_app) dev_ = new trezor.Session(transport, dev_.session);
                                 deferred.resolve(dev_.initialize().then(function(init_res) {
                                     var outdated = false;
-                                    if (init_res.message.major_version < 1) outdated = true;
-                                    else if (init_res.message.major_version == 1 &&
-                                             init_res.message.minor_version < 3) outdated = true;
+                                    console.log("Major " + init_res.message.major_version);
+                                    console.log("Minor " + init_res.message.minor_version);
+                                    // keepkey
+                                    if (devices[0]["vendorId"] == 11044) {
+                                            if (init_res.message.major_version < 1) outdated = true;
+                                    // satoshilabs
+                                    } else if (devices[0]["vendorId"] == 21324) {
+                                            if (init_res.message.major_version < 1) outdated = true;
+                                            else if (init_res.message.major_version == 1 &&
+                                                     init_res.message.minor_version < 3) outdated = true;
+                                    }
                                     if (outdated) {
                                         notices.makeNotice('error', gettext("Outdated firmware. Please upgrade to at least 1.3.0 at http://mytrezor.com/"));
                                         return $q.reject({outdatedFirmware: true});
@@ -2558,7 +2567,7 @@ angular.module('greenWalletServices', [])
             }).catch(function(e) {
                 if (!silentFailure) {
                     $rootScope.safeApply(function() {
-                        // notices.makeNotice('error', gettext('TREZOR initialisation failed') + ': ' + e);
+                        // notices.makeNotice('error', gettext('Hardware Wallet initialisation failed') + ': ' + e);
                     });
                 }
                 deferred.reject({pluginLoadFailed: true})
