@@ -2528,6 +2528,7 @@ angular.module('greenWalletServices', [])
                                     if (devices[0]["vendorId"] == 11044) {
                                             if (init_res.message.major_version < 1) outdated = true;
                                     // satoshilabs
+                                    // not tested but should work: bwallet, AvalonWallet (reuse of vendorId)
                                     } else if (devices[0]["vendorId"] == 21324) {
                                             if (init_res.message.major_version < 1) outdated = true;
                                             else if (init_res.message.major_version == 1 &&
