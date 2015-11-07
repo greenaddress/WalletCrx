@@ -10,7 +10,7 @@
                 <div ng-include="wallet.signuplogin_header"></div>
                 <hr>
                 <div class="subtitle" ng-hide="state.trezor_dev">Please connect your Hardware Wallet device</div>
-                <div class="subtitle" ng-show="state.trezor_dev">Trezor detected.</div>
+                <div class="subtitle" ng-show="state.trezor_dev">Hardware Wallet detected.</div>
                 <div class="subtitle" ng-show="state.trezor_dev.signing"><strong>Please confirm the signature on your Hardware Wallet device.</strong></div>
                 <hr ng-show="state.trezor_dev">
                 <button type="submit" tabindex="4" ng-show="state.trezor_dev" ng-disabled="logging_in"

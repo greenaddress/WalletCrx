@@ -592,9 +592,15 @@ angular.module('greenWalletServices', [])
             tx.outs.forEach(function(txout) {
                 out_value += txout.value;
             });
+            var fee = in_value - out_value, value;
+            if ($scope.send_tx.amount == 'MAX') {
+                value = $scope.wallet.final_balance - fee;
+            } else {
+                value = $scope.send_tx.amount_to_satoshis($scope.send_tx.amount);
+            }
             scope.tx = {
-                fee: in_value - out_value,
-                value: $scope.send_tx.amount_to_satoshis($scope.send_tx.amount),
+                fee: fee,
+                value: value,
                 recipient: $scope.send_tx.recipient.name || $scope.send_tx.recipient,
             };
             var modal = $modal.open({
@@ -1076,8 +1082,12 @@ angular.module('greenWalletServices', [])
                     if (!newValue) {
                         $scope[model_name].amount_fiat = undefined;
                     } else {
-                        $scope[model_name].amount_fiat = newValue * $scope.wallet.fiat_rate / div;
-                        $scope[model_name].amount_fiat = trimDecimalPlaces(2, $scope[model_name].amount_fiat);
+                        if (newValue == 'MAX') {
+                            $scope[model_name].amount_fiat = 'MAX';
+                        } else {
+                            $scope[model_name].amount_fiat = newValue * $scope.wallet.fiat_rate / div;
+                            $scope[model_name].amount_fiat = trimDecimalPlaces(2, $scope[model_name].amount_fiat);
+                        }
                     }
                     if ($scope[model_name].amount_fiat !== oldFiat) {
                         $scope[model_name].updated_by_conversion = true;
@@ -1100,8 +1110,12 @@ angular.module('greenWalletServices', [])
                     if (!newValue) {
                         $scope[model_name].amount = undefined;
                     } else {
-                        $scope[model_name].amount = (div * newValue / $scope.wallet.fiat_rate);
-                        $scope[model_name].amount = trimDecimalPlaces(unitPlaces, $scope[model_name].amount);
+                        if (newValue == 'MAX') {
+                            $scope[model_name].amount = 'MAX';
+                        } else {
+                            $scope[model_name].amount = (div * newValue / $scope.wallet.fiat_rate);
+                            $scope[model_name].amount = trimDecimalPlaces(unitPlaces, $scope[model_name].amount);
+                        }
                     }
                     if ($scope[model_name].amount !== oldBTC) {
                         $scope[model_name].updated_by_conversion = true;
@@ -1192,13 +1206,14 @@ angular.module('greenWalletServices', [])
         console.log(msg);
         var is_chrome_app = window.chrome && chrome.storage;
         if (is_chrome_app) {
-                var opt = {
-                    type: "basic",
-                    title: "GreenAddress Notification",
-                    message: msg,
-                    iconUrl: BASE_URL + "/static/img/logos/logo-greenaddress.png"
-                };
-                chrome.notifications.create("", opt);
+            var opt = {
+                type: "basic",
+                title: "GreenAddress Notification",
+                message: msg,
+                iconUrl: BASE_URL + "/static/img/logos/logo-greenaddress.png"
+            };
+
+            chrome.notifications.create("", opt);
         }
 
         var data = {
@@ -2429,7 +2444,7 @@ angular.module('greenWalletServices', [])
     var handleError = function(e) {
         var message;
         if (e == 'Opening device failed') {
-            message = gettext("Device could not be opened. Make sure you don't have any Hardware Wallet client running in another tab or browser window!");
+            message = gettext("Device could not be opened. Make sure you don't have any TREZOR client running in another tab or browser window!");
         } else {
             message = e;
         }
@@ -2531,22 +2546,12 @@ angular.module('greenWalletServices', [])
                             }
                             var acquire_fun = is_chrome_app ? 'open' : 'acquire';
                             $q.when(trezor_api[acquire_fun](devices[0])).then(function(dev_) {
-                                console.log(devices[0]);
                                 if (!is_chrome_app) dev_ = new trezor.Session(transport, dev_.session);
                                 deferred.resolve(dev_.initialize().then(function(init_res) {
                                     var outdated = false;
-                                    console.log("Major " + init_res.message.major_version);
-                                    console.log("Minor " + init_res.message.minor_version);
-                                    // keepkey
-                                    if (devices[0]["vendorId"] == 11044) {
-                                            if (init_res.message.major_version < 1) outdated = true;
-                                    // satoshilabs
-                                    // not tested but should work: bwallet, AvalonWallet (reuse of vendorId)
-                                    } else if (devices[0]["vendorId"] == 21324) {
-                                            if (init_res.message.major_version < 1) outdated = true;
-                                            else if (init_res.message.major_version == 1 &&
-                                                     init_res.message.minor_version < 3) outdated = true;
-                                    }
+                                    if (init_res.message.major_version < 1) outdated = true;
+                                    else if (init_res.message.major_version == 1 &&
+                                             init_res.message.minor_version < 3) outdated = true;
                                     if (outdated) {
                                         notices.makeNotice('error', gettext("Outdated firmware. Please upgrade to at least 1.3.0 at http://mytrezor.com/"));
                                         return $q.reject({outdatedFirmware: true});
@@ -2581,7 +2586,7 @@ angular.module('greenWalletServices', [])
             }).catch(function(e) {
                 if (!silentFailure) {
                     $rootScope.safeApply(function() {
-                        // notices.makeNotice('error', gettext('Hardware Wallet initialisation failed') + ': ' + e);
+                        // notices.makeNotice('error', gettext('TREZOR initialisation failed') + ': ' + e);
                     });
                 }
                 deferred.reject({pluginLoadFailed: true})
@@ -3174,7 +3179,7 @@ angular.module('greenWalletServices', [])
                 process();
             }
         } else {
-            var worker = new Worker("/static/js/bip38_worker.min.js");
+            var worker = new Worker("/static/js/greenwallet/signup/bip38_worker.js");
             worker.onmessage = function(message) {
                 d.resolve(message);
             }
@@ -3279,7 +3284,7 @@ angular.module('greenWalletServices', [])
                     process();
                 }
             } else {
-                var worker = new Worker("/static/js/bip38_worker.min.js");
+                var worker = new Worker("/static/js/greenwallet/signup/bip38_worker.js");
                 worker.onmessage = function(message) {
                     d.resolve(message.data);
                 }

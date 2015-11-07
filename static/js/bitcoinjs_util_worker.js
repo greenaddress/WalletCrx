@@ -2,11 +2,15 @@ try { importScripts('typedarray.js'); } catch (e) { }  // Cordova polyfill
 importScripts('secp256k1.js');
 importScripts('bitcoinjs.min.js');
 Module.secp256k1ctx = Module._secp256k1_context_create(3);
-var randArr = new Uint8Array(32);
-crypto.getRandomValues(randArr);
-if (!Module._secp256k1_context_randomize(Module.secp256k1ctx, randArr)) {
-	throw new Error("Couldn't initialize library, randomized failed");
-}
+
+try {
+    var randArr = new Uint8Array(32);
+    window.crypto.getRandomValues(randArr);
+    if (!Module._secp256k1_context_randomize(Module.secp256k1ctx, randArr)) {
+        throw new Error("Couldn't initialize library, randomized failed");
+    }
+} catch (e) { }  // firefox doesn't find window nor crypto?
+
 
 Bitcoin.ECKey.prototype.getPub = function(compressed) {
     if (compressed === undefined) compressed = this.compressed;
