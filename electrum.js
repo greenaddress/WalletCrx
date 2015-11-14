@@ -73,25 +73,52 @@ function Electrum() {
     this.onSocketReceiveError.bind(this));
 };
 
+// FIXME: ssl unused currently
+// since Chrome 38 we can use chrome.sockets.tcp.secure to enable ssl on tcp
+// https://developer.chrome.com/apps/sockets_tcp#method-secure
+// 
+// possible future fix: attempt to use ssl server first
+// if that fails then attempt clearnet
+//
+
+// addr, port
+Electrum.SSL_SERVERS = [
+  ["electrum.jdubya.info", 50002],
+  ["vps.hsmiths.com", 50002],
+  ["ecdsa.net", 110],
+  ["eco-electrum.ddns.net", 50002],
+  ["electrum.be", 50002],
+  ["electrum.drollette.com", 50002],
+  ["electrum.hsmiths.com", 50002],
+  ["electrum.no-ip.org",50002],
+  ["electrum.ofloo.net", 50002],
+  ["electrum.petrkr.net", 50002],
+  ["electrum.thwg.org", 50002],
+  ["electrum0.electricnewyear.net", 50002],
+  ["erbium1.sytes.net", 50002],
+  ["kirsche.emzy.de", 50002],
+  ["us.electrum.be", 50002]
+];
+
+// addr, port
 Electrum.SERVERS = [
-  "electrum.no-ip.org",
-  "electrum.stepkrav.pw",
-  "ecdsa.net",
-  "bitcoin.epicinet.net",
-  "erbium1.sytes.net",
-  "electrum0.electricnewyear.net",
-  "kirsche.emzy.de",
-  "electrum2.hachre.de",
-  "electrum.hsmiths.com",
-  "EAST.electrum.jdubya.info",
-  "WEST.electrum.jdubya.info",
-  "electrum.thwg.org"
+  ["electrum.jdubya.info", 50001],
+  ["vps.hsmiths.com", 50001],
+  ["ecdsa.net", 50001],
+  ["electrum.be", 50001],
+  ["electrum.drollette.com", 50001],
+  ["electrum.no-ip.org", 50001],
+  ["electrum.thwg.org", 50001],
+  ["electrum0.electricnewyear.net", 50001],
+  ["erbium1.sytes.net", 50001],
+  ["kirsche.emzy.de", 50001],
+  ["us.electrum.be", 50001]
 ];
 
 Electrum.prototype.checkConnectionsAvailable = function() {
   var that = this;
   return new Promise(function(resolve, reject) {
-    var tryServer = function (name) {
+    var tryServer = function (eserver) {
       return new Promise(function(resolve, reject) {
         var socketId, resolved;
 
@@ -102,7 +129,7 @@ Electrum.prototype.checkConnectionsAvailable = function() {
             reject();
           } else {
             chrome.sockets.tcp.close(socketId);
-            that.currentServerHostname = name;
+            that.currentEserver = eserver;
             resolve();
           }
         }
@@ -110,7 +137,7 @@ Electrum.prototype.checkConnectionsAvailable = function() {
         var onSocketCreate = function(socketInfo) {
           socketId = socketInfo.socketId;
           chrome.sockets.tcp.connect(socketInfo.socketId,
-                                     name, 50001,
+                                     eserver[0], eserver[1],
                                      onConnectComplete);
         };
 
@@ -251,12 +278,12 @@ Electrum.prototype.onSendComplete = function(sendInfo) {
 };
 
 Electrum.prototype.pickRandomServer = function() {
-  var newHostname;
+  var newEserver;
   do {
-    newHostname =
+    newEserver =
       Electrum.SERVERS[Math.floor(Math.random() * Electrum.SERVERS.length)];
-  } while (newHostname == this.currentServerHostname);
-  this.currentServerHostname = newHostname;
+  } while (newEserver== this.currentEserver);
+  this.currentEserver = newEserver;
 };
 
 Electrum.prototype.connectToServer = function() {
@@ -275,7 +302,8 @@ Electrum.prototype.connectToServer = function() {
         window.setTimeout(tryConnection.bind(this), retryDelay);
       } else {
         this.connectionStateDescription = ("Connected to " +
-                                           this.currentServerHostname);
+                                           this.currentEserver[0] + ":" +
+                                           this.currentEserver[1]);
         this.isSocketConnected = true;
         this.flushOutgoingQueue();
         resolve();
@@ -285,10 +313,11 @@ Electrum.prototype.connectToServer = function() {
     function tryConnection() {
       this.pickRandomServer();
       this.connectionStateDescription = ("Attempting connection to " +
-                                         this.currentServerHostname);
+                                         this.currentEserver[0] + ":" +
+                                         this.currentEserver[1]);
       chrome.sockets.tcp.connect(this.socketId,
-                                 this.currentServerHostname,
-                                 50001,
+                                 this.currentEserver[0],
+                                 this.currentEserver[1],
                                  onConnectComplete.bind(this));
     }
 
