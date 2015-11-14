@@ -79,26 +79,8 @@ function Electrum() {
 // 
 // possible future fix: attempt to use ssl server first
 // if that fails then attempt clearnet
-//
-
-// addr, port
-Electrum.SSL_SERVERS = [
-  ["electrum.jdubya.info", 50002],
-  ["vps.hsmiths.com", 50002],
-  ["ecdsa.net", 110],
-  ["eco-electrum.ddns.net", 50002],
-  ["electrum.be", 50002],
-  ["electrum.drollette.com", 50002],
-  ["electrum.hsmiths.com", 50002],
-  ["electrum.no-ip.org",50002],
-  ["electrum.ofloo.net", 50002],
-  ["electrum.petrkr.net", 50002],
-  ["electrum.thwg.org", 50002],
-  ["electrum0.electricnewyear.net", 50002],
-  ["erbium1.sytes.net", 50002],
-  ["kirsche.emzy.de", 50002],
-  ["us.electrum.be", 50002]
-];
+// however unfortunately as of 11/2015 all electrum servers use self signed ssl which can't be used
+// within a chrome app
 
 // addr, port
 Electrum.SERVERS = [
