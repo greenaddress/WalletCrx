@@ -297,10 +297,16 @@ Electrum.prototype.connectToServer = function() {
       this.connectionStateDescription = ("Attempting connection to " +
                                          this.currentEserver[0] + ":" +
                                          this.currentEserver[1]);
-      chrome.sockets.tcp.connect(this.socketId,
-                                 this.currentEserver[0],
-                                 this.currentEserver[1],
-                                 onConnectComplete.bind(this));
+      console.log(this.connectionStateDescription);
+      try {
+              chrome.sockets.tcp.connect(this.socketId,
+                                         this.currentEserver[0],
+                                         this.currentEserver[1],
+                                         onConnectComplete.bind(this));
+      } catch (err) {
+              console.log(err);
+              throw err;
+      } 
     }
 
     function onSocketCreate(socketInfo) {
