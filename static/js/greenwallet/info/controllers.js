@@ -146,6 +146,12 @@ angular.module('greenWalletInfoControllers',
         if (!$scope.filtered_transactions || !$scope.filtered_transactions.list || !$scope.filtered_transactions.list.length) return;
         $scope.$apply(function() {
             for (var i = 0; i < $scope.filtered_transactions.list.length; i++) {
+                if (data.asset_id &&
+                    data.asset_id !=
+                        $scope.filtered_transactions.list[i].asset_id) {
+                    // different asset id
+                    continue;
+                }
                 if (!$scope.filtered_transactions.list[i].block_height) {
                     // if any unconfirmed, we need to refetch all txs to get the block height
                     if ($scope.filtered_transactions.sorting.order_by != 'ts' ||
@@ -170,8 +176,14 @@ angular.module('greenWalletInfoControllers',
             invalid_passphrase: gettext('Invalid passphrase')
         }
         var sweep = function(key_bytes) {
-            var key = new Bitcoin.ECKey(key_bytes, true);
-            tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social", key.getPub().toBytes()).then(function(data) {
+            var key = new Bitcoin.bitcoin.ECPair(
+                Bitcoin.BigInteger.fromBuffer(key_bytes),
+                null,
+                {compressed: true,
+                 network: cur_net}
+            );
+            tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social",
+                    Array.from(key.getPublicKeyBuffer())).then(function(data) {
                 data.prev_outputs = [];
                 for (var i = 0; i < data.prevout_scripts.length; i++) {
                     data.prev_outputs.push(
@@ -188,15 +200,14 @@ angular.module('greenWalletInfoControllers',
             });
         };
         if (encrypted_key.indexOf('K') == 0 || encrypted_key.indexOf('L') == 0 || encrypted_key.indexOf('c') == 0) {  // unencrypted
-            var bytes = Bitcoin.base58.decode(encrypted_key);
+            var bytes = Bitcoin.bs58.decode(encrypted_key);
             if (bytes.length != 38) {
                 deferred.reject(errors.invalid_unenc_privkey);
                 return deferred.promise;
             }
             var expChecksum = bytes.slice(-4);
             bytes = bytes.slice(0, -4);
-            var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(Bitcoin.convert.bytesToWordArray(bytes)));
-            checksum = Bitcoin.convert.wordArrayToBytes(checksum);
+            var checksum = Bitcoin.bitcoin.crypto.hash256(bytes);
             if (checksum[0] != expChecksum[0] || checksum[1] != expChecksum[1] || checksum[2] != expChecksum[2] || checksum[3] != expChecksum[3]) {
                 deferred.reject(errors.invalid_unenc_privkey);
                 return deferred.promise;
@@ -233,12 +244,13 @@ angular.module('greenWalletInfoControllers',
                         deferred.reject([message.data.error == 'invalid_passphrase',
                                          errors[message.data.error]]);
                     } else {
-                        sweep(message.data);
+                        sweep(new Bitcoin.bitcoin.ECPair.fromWIF(message.data, cur_net).d.toBuffer());
                         deferred.resolve();
                     }
                 }
                 worker.postMessage({b58: encrypted_key,
-                                    password: password});
+                                    password: password,
+                                    cur_net_wif: cur_net.wif});
             }
         }
         return deferred.promise;

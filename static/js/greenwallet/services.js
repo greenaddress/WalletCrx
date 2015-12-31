@@ -27,14 +27,22 @@ angular.module('greenWalletServices', [])
             })();
             return deferred.promise;
         } else {
-            var salt = Bitcoin.CryptoJS.lib.WordArray.random(16);
-            var key256Bits = Bitcoin.CryptoJS.PBKDF2(password, salt, {
-                    keySize: 256/32, iterations: pbkdf2_iterations});
-            var encrypted = Bitcoin.CryptoJS.AES.encrypt(data, key256Bits, {
-                    mode: Bitcoin.CryptoJS.mode.CBC,
-                    padding: Bitcoin.CryptoJS.pad.Iso10126,
-                    iv: salt});
-            return $q.when(Bitcoin.CryptoJS.enc.Base64.stringify(salt.concat(encrypted.ciphertext)));
+            var salt = Bitcoin.randombytes(16);
+            var key256Bits = Bitcoin.pbkdf2.pbkdf2Sync(
+                password,
+                salt,
+                pbkdf2_iterations,
+                256/8
+            );
+            var cipher = Bitcoin.aes.createCipheriv(
+                'aes-256-cbc',
+                key256Bits,
+                salt
+            );
+            cipher.end(data);
+            return $q.when(Bitcoin.Buffer.Buffer.concat([
+                salt, cipher.read()
+            ]).toString('base64'));
         }
     }
     cryptoService.decrypt = function(data, password) {
@@ -50,21 +58,30 @@ angular.module('greenWalletServices', [])
             })();
             return deferred.promise;
         } else {
-            //iso10126 with pbkdf2_iterations iterations
             try {
-                var parsed_data = Bitcoin.CryptoJS.enc.Base64.parse(data);
-                var salt = Bitcoin.CryptoJS.lib.WordArray.create(parsed_data.words.splice(0, 4));
-                parsed_data.sigBytes -= 16;
-                var key256Bits = Bitcoin.CryptoJS.PBKDF2(password, salt, {
-                        keySize: 256/32, iterations: pbkdf2_iterations});
-                var decoded = Bitcoin.CryptoJS.AES.decrypt(
-                        Bitcoin.CryptoJS.lib.CipherParams.create({ciphertext: parsed_data}),
-                        key256Bits, {
-                            mode: Bitcoin.CryptoJS.mode.CBC,
-                            padding: Bitcoin.CryptoJS.pad.Iso10126,
-                            iv: salt});
-                if (decoded != null && decoded.sigBytes > 0) {
-                    return $q.when(Bitcoin.CryptoJS.enc.Utf8.stringify(decoded));
+                var parsed_data = new Bitcoin.Buffer.Buffer(data, 'base64');
+                var salt = parsed_data.slice(0, 16);
+                parsed_data = parsed_data.slice(16);
+                var key256Bits = Bitcoin.pbkdf2.pbkdf2Sync(
+                    password,
+                    salt,
+                    pbkdf2_iterations,
+                    256/8
+                );
+                var cipher = Bitcoin.aes.createDecipheriv(
+                    'aes-256-cbc',
+                    key256Bits,
+                    salt
+                );
+                cipher.setAutoPadding(false);
+                cipher.end(parsed_data);
+                var decoded = cipher.read();
+                // ignore padding bytes for backwards compatibility,
+                // because our old implementation used the iso10126 padding:
+                var padding = decoded[decoded.length-1];
+                decoded = decoded.slice(0, decoded.length-padding);
+                if (decoded != null) {
+                    return $q.when(decoded.toString('utf-8'));
                 };
             } catch (e) {
                 console.log(e);
@@ -133,8 +150,98 @@ angular.module('greenWalletServices', [])
 
     return autotimeoutService;
 
-}]).factory('wallets', ['$q', '$rootScope', 'tx_sender', '$location', 'notices', '$modal', 'focus', 'crypto', 'gaEvent', 'storage', 'mnemonics', 'addressbook', 'autotimeout', 'social_types', 'sound', '$interval', '$timeout', 'branches', 'user_agent', '$http',
-        function($q, $rootScope, tx_sender, $location, notices, $modal, focus, crypto, gaEvent, storage, mnemonics, addressbook, autotimeout, social_types, sound, $interval, $timeout, branches, user_agent, $http) {
+}]).factory('blind', ['branches', function(branches) {
+    var service = {};
+    service._unblindOutValue = function($scope, out, scanning_key) {
+        var secexp_buf = scanning_key.d.toBuffer();
+        var secexp = Module._malloc(32);
+        var nonce = Module._malloc(33);
+        var nonce_res = Module._malloc(32);
+        var pubkey_p = Module._malloc(64);
+        var p_arr = Array.from(new Bitcoin.BigInteger(''+pubkey_p).toBuffer());
+        while (p_arr.length < 4) p_arr.unshift(0);
+        for (var i = 0; i < 32; ++i) {
+            setValue(secexp+i, secexp_buf[i], 'i8');
+        }
+        for (var i = 0; i < 33; ++i) {
+            setValue(nonce + i, out.nonce_commitment[i], 'i8');
+        }
+        Module._secp256k1_ec_pubkey_parse(
+            Module.secp256k1ctx,
+            pubkey_p,
+            nonce,
+            33
+        );
+        Module._secp256k1_ecdh(
+            Module.secp256k1ctx,
+            nonce_res,
+            pubkey_p,
+            secexp
+        );
+        var nonce_buf = new Bitcoin.Buffer.Buffer(32);
+        for (var i = 0; i < 32; ++i) {
+            nonce_buf[i] = getValue(nonce_res + i, 'i8') & 0xff;
+        }
+        nonce_buf = Bitcoin.bitcoin.crypto.sha256(nonce_buf);
+        for (var i = 0; i < 32; ++i) {
+            setValue(nonce_res + i, nonce_buf[i], 'i8');
+        }
+        var blinding_factor_out = Module._malloc(32);
+        var amount_out = Module._malloc(8);
+        var min_value = Module._malloc(8);
+        var max_value = Module._malloc(8);
+        var msg_out = Module._malloc(4096);
+        var msg_size = Module._malloc(4);
+        var commitment = Module._malloc(33);
+        for (var i = 0; i < 33; ++i) {
+            setValue(commitment + i, out.commitment[i], 'i8');
+        }
+        var range_proof = Module._malloc(out.range_proof.length);
+        for (var i = 0; i < out.range_proof.length; ++i) {
+            setValue(range_proof + i, out.range_proof[i], 'i8');
+        }
+        var rewindRes = Module._secp256k1_rangeproof_rewind(
+            Module.secp256k1ctx,
+            blinding_factor_out,
+            amount_out,
+            msg_out,
+            msg_size,
+            nonce_res,
+            min_value,
+            max_value,
+            commitment,
+            range_proof,
+            out.range_proof.length
+        );
+        if (rewindRes != 1) {
+            throw "Invalid transaction."
+        }
+        var ret = [];
+        for (var i = 0; i < 8; ++i) {
+            ret[8-i-1] = getValue(amount_out+i, 'i8') & 0xff;
+        }
+        var val = Bitcoin.BigInteger.fromBuffer(
+            new Bitcoin.Buffer.Buffer(ret)
+        );
+        return {
+            value: ''+(+val),
+            blinding_factor_out: blinding_factor_out
+        };
+    };
+    service.unblindOutValue = function($scope, out, pubkey_pointer) {
+        return $scope.wallet.hdwallet.deriveHardened(branches.BLINDED).then(
+                function(branch) {
+            // TODO: subaccounts
+            return branch.deriveHardened(pubkey_pointer);
+        }).then(function(scanning_node) {
+            return service._unblindOutValue(
+                $scope, out, scanning_node.keyPair
+            );
+        });
+    }
+    return service;
+}]).factory('wallets', ['$q', '$rootScope', 'tx_sender', '$location', 'notices', '$modal', 'focus', 'crypto', 'gaEvent', 'storage', 'mnemonics', 'addressbook', 'autotimeout', 'social_types', 'sound', '$interval', '$timeout', 'branches', 'user_agent', '$http', 'blind',
+        function($q, $rootScope, tx_sender, $location, notices, $modal, focus, crypto, gaEvent, storage, mnemonics, addressbook, autotimeout, social_types, sound, $interval, $timeout, branches, user_agent, $http, blind) {
     var walletsService = {};
     var handle_double_login = function(retry_fun) {
         return $modal.open({
@@ -215,7 +322,10 @@ angular.module('greenWalletServices', [])
                 autotimeout.start($scope.wallet.appearance.altimeout);
                 $scope.wallet.privacy = data.privacy;
                 $scope.wallet.limits = data.limits;
-                $scope.wallet.subaccounts = data.subaccounts;
+                $scope.wallet.subaccounts = [
+                    {pointer: 0, name: gettext("Main")}
+                ].concat(data.subaccounts);
+                $scope.wallet.assets = data.assets;
                 $scope.wallet.current_subaccount = $scope.wallet.appearance.current_subaccount || 0;
                 $scope.wallet.unit = $scope.wallet.appearance.unit || 'mBTC';
                 $scope.wallet.cache_password = data.cache_password;
@@ -271,15 +381,17 @@ angular.module('greenWalletServices', [])
         tx_sender.trezor_dev = trezor_dev;
         var that = this;
         return trezor_dev.getPublicKey([]).then(function(pubkey) {
-            var hdwallet = new Bitcoin.HDWallet();
-            hdwallet.network = cur_net;
             var pk = pubkey.message.node.public_key;
             pk = pk.toHex ? pk.toHex() : pk;
-            hdwallet.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(pk), true);
-            tx_sender.trezor_address = hdwallet.pub.getAddress(Bitcoin.network[cur_net].addressVersion).toString();
+            var keyPair = new Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                new Bitcoin.Buffer.Buffer(pk, 'hex'),
+                cur_net
+            );
+            tx_sender.trezor_address = keyPair.getAddress();
             var cc = pubkey.message.node.chain_code;
             cc = cc.toHex ? cc.toHex() : cc;
-            hdwallet.chaincode = Bitcoin.convert.hexToBytes(cc);
+            var chainCode = new Bitcoin.Buffer.Buffer(cc, 'hex');
+            var hdwallet = new Bitcoin.bitcoin.HDNode(keyPair, chainCode);
             tx_sender.hdwallet = hdwallet;
             return that._login($scope, hdwallet, undefined, signup, logout, undefined, path);
         });
@@ -287,18 +399,26 @@ angular.module('greenWalletServices', [])
     walletsService.login_btchip = function($scope, btchip, btchip_pubkey, double_login_callback, signup) {
         tx_sender.btchip = btchip;
         tx_sender.btchip_address = btchip_pubkey.bitcoinAddress.value;
-        var hdwallet = new Bitcoin.HDWallet();
-        hdwallet.network = cur_net;
-        hdwallet.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(btchip_pubkey.publicKey.toString(HEX)));
-        hdwallet.chaincode = Bitcoin.convert.hexToBytes(btchip_pubkey.chainCode.toString(HEX));
-        hdwallet.depth = 0;
-        hdwallet.parentFingerprint = [0, 0, 0, 0];
-        hdwallet.index = 0;
+        var keyPair = new Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+            new Bitcoin.Buffer.Buffer(
+                btchip_pubkey.publicKey.toString(HEX),
+                'hex'
+            ),
+            cur_net
+        );
+        var chainCode = new Bitcion.Buffer.Buffer(
+            btchip_pubkey.chainCode.toString(HEX), 'hex'
+        );
+        var hdwallet = new Bitcoin.bitcoin.HDNode(
+            keyPair,
+            chainCode
+        );
         tx_sender.hdwallet = hdwallet;
         if (signup) {
             var path_d = btchip.app.getWalletPublicKey_async("18241'").then(function(result) {
-                var ecPub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(result.publicKey.toString(HEX)));
-                var extended = result.chainCode.toString(HEX) + ecPub.toHex(true);
+                var ecPub = new Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(new Bitcoin.Buffer.Buffer(result.publicKey.toString(HEX), 'hex'));
+                ecPub.compressed = true;
+                var extended = result.chainCode.toString(HEX) + bs58check.decode(ecPub.toWIF()).toString('hex');
                 var path = Bitcoin.CryptoJS.HmacSHA512(extended, 'GreenAddress.it HD wallet path');
                 return Bitcoin.CryptoJS.enc.Hex.stringify(path);
             });
@@ -316,10 +436,13 @@ angular.module('greenWalletServices', [])
             }
             var data = JSON.parse(json);
             tx_sender.wallet = $scope.wallet;
-            var hdwallet = new Bitcoin.HDWallet();
-            hdwallet.network = cur_net;
-            hdwallet.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(data.public_key));
-            hdwallet.chaincode = Bitcoin.convert.hexToBytes(data.chain_code);
+            var hdwallet = new Bitcoin.bitcoin.HDNode(
+                Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                    new Bitcoin.Buffer.Buffer(data.public_key, 'hex'),
+                    cur_net
+                ),
+                new Bitcoin.Buffer.Buffer(data.chain_code, 'hex')
+            );
             $scope.wallet.hdwallet = hdwallet;
             try {
                 $scope.wallet.appearance = JSON.parse(data.appearance);
@@ -339,7 +462,11 @@ angular.module('greenWalletServices', [])
 
             autotimeout.start($scope.wallet.appearance.altimeout);
             $scope.wallet.unit = $scope.wallet.appearance.unit || 'mBTC';
-            $scope.wallet.subaccounts = data.subaccounts;
+            $scope.wallet.subaccounts = [
+                {pointer: 0, name: gettext("Main")}
+            ].concat(data.subaccounts);
+            console.log($scope.wallet.subaccounts);
+            $scope.wallet.assets = data.assets;
             $scope.wallet.current_subaccount = 0;
             $scope.wallet.cache_password = data.cache_password;
             $scope.wallet.fiat_exchange = data.exchange;
@@ -375,6 +502,23 @@ angular.module('greenWalletServices', [])
             return social_destination;
         }
     };
+    var unblindOutputs = function($scope, txData) {
+        var deferreds = [];
+        var tx = Bitcoin.contrib.transactionFromHex(txData.data);
+        for (var i = 0; i < txData.eps.length; ++i) {
+            (function(ep) {
+                if (ep.value == 0 && ep.is_relevant && ep.is_credit) {
+                    var d = blind.unblindOutValue(
+                        $scope, tx.outs[ep.pt_idx], ep.pubkey_pointer
+                    ).then(function(data) {
+                        ep.value = data.value;
+                    });
+                    deferreds.push(d);
+                }
+            })(txData.eps[i]);
+        }
+        return $q.all(deferreds);
+    }
     walletsService._getTransactions = function($scope, notifydata, page_id, query, sorting, date_range, subaccount) {
         var transactions_key = $scope.wallet.receiving_id + 'transactions';
         var d = $q.defer();
@@ -395,13 +539,48 @@ angular.module('greenWalletServices', [])
         var call = tx_sender.call('http://greenaddressit.com/txs/get_list_v2',
             page_id, query, sort_by, date_range_iso, subaccount);
 
+        if (cur_net.isAlpha) {
+            call = call.then(function(data) {
+                var deferreds = [];
+                var valid = {};
+                for (var i = 0; i < data.list.length; i++) {
+                    (function(i) {
+                        var tx = data.list[i];
+                        valid[i] = true;
+                        deferreds.push(unblindOutputs($scope, tx).catch(function(e) {
+                            if (e !== "Invalid transaction.") {
+                                throw e;
+                            } else {
+                                // skip invalid transactions
+                                valid[i] = false;
+                            }
+                        }));
+                    })(i);
+                }
+                return $q.all(deferreds).then(function() {
+                    var orig_list = data.list;
+                    data.list = [];
+                    for (var i = 0; i < orig_list.length; ++i) {
+                        if (valid[i]) data.list.push(orig_list[i]);
+                    }
+                    return data;
+                });
+            });
+        }
+
         call.then(function(data) {
             var retval = [];
             var any_unconfirmed_seen = false;
-
+            var asset_name = null;
             for (var i = 0; i < data.list.length; i++) {
                 var tx = data.list[i], inputs = [], outputs = [];
-                var num_confirmations = data.cur_block - tx.block_height + 1;
+                var asset_id = tx.eps[0].asset_id;
+                if (asset_id) {
+                    var num_confirmations = data.cur_block[asset_id] - tx.block_height + 1;
+                    asset_name = $scope.wallet.assets[asset_id];
+                } else {
+                    var num_confirmations = data.cur_block - tx.block_height + 1;
+                }
 
                 any_unconfirmed_seen = any_unconfirmed_seen || (num_confirmations < 6 && !tx.double_spent_by);
 
@@ -418,9 +597,9 @@ angular.module('greenWalletServices', [])
                     var ep = tx.eps[j];
                     if (ep.is_relevant) {
                         if (ep.is_credit) {
-                            var bytes = Bitcoin.base58.decode(ep.ad);
+                            var bytes = Bitcoin.bs58.decode(ep.ad);
                             var version = bytes[0];
-                            var _external_social = version != Bitcoin.network[cur_net].p2shVersion;
+                            var _external_social = version != cur_net.scriptHash
                             external_social = external_social || _external_social;
 
                             if (ep.social_destination && external_social) {
@@ -485,9 +664,9 @@ angular.module('greenWalletServices', [])
                                 } catch (e) {
                                 }
                                 pubkey_pointer = ep.pubkey_pointer;
-                                var bytes = Bitcoin.base58.decode(ep.ad);
+                                var bytes = Bitcoin.bs58.decode(ep.ad);
                                 var version = bytes[0];
-                                var _external_social = version != Bitcoin.network[cur_net].p2shVersion;
+                                var _external_social = version != cur_net.scriptHash;
                                 external_social = external_social || _external_social;
                                 if (!ep.is_spent && ep.is_relevant) {
                                     unclaimed = true;
@@ -531,10 +710,11 @@ angular.module('greenWalletServices', [])
                              redeemable: redeemable_value.compareTo(new Bitcoin.BigInteger('0')) > 0,
                              redeemable_unspent: redeemable_unspent,
                              sent_back: sent_back, block_height: tx.block_height,
-                             confirmations: tx.block_height ? data.cur_block - tx.block_height + 1: 0,
+                             confirmations: tx.block_height ? num_confirmations: 0,
                              has_payment_request: tx.has_payment_request,
                              double_spent_by: tx.double_spent_by, rawtx: tx.data,
-                             social_destination: tx_social_destination, social_value: tx_social_value});
+                             social_destination: tx_social_destination, social_value: tx_social_value,
+                             asset_id: asset_id, asset_name: asset_name});
                 // tx.unclaimed is later used for cache updating
                 tx.unclaimed = retval[0].unclaimed || (retval[0].redeemable && retval[0].redeemable_unspent);
             }
@@ -574,49 +754,323 @@ angular.module('greenWalletServices', [])
         }).finally(function() { $rootScope.decrementLoading(); });
         return d.promise
     };
+    walletsService.send_confidential_tx = function($scope, recipient, satoshis) {
+        satoshis = new Bitcoin.BigInteger(satoshis);
+        var recipient_scanning_pubkey = recipient.slice(2, 35);
+        var change_idx = Bitcoin.randombytes(1)[0] % 2;
+        var version;
+        if (cur_net === Bitcoin.bitcoin.networks.bitcoin) {
+            version = 10;
+        } else {
+            version = 25;
+        }
+        var unspent_found = 0, utxo_num = 0;
+        var needed_unspent = [];
+        while (unspent_found < satoshis) {
+            if (utxo_num + 1 > $scope.wallet.utxo.length) {
+                return $q.reject("Not enough money");
+            }
+            var utxo = $scope.wallet.utxo[utxo_num];
+            unspent_found += +utxo.data.value;
+            needed_unspent.push(utxo);
+            utxo_num += 1;
+        }
+        var input_blinds_and_change = [];
+        for (var i = 0; i < needed_unspent.length; ++i) {
+            (function(utxo) {
+                input_blinds_and_change.push(
+                    blind.unblindOutValue(
+                        $scope, utxo.out, utxo.data.pubkey_pointer
+                    ).then(function(data) {
+                        return data.blinding_factor_out;
+                    })
+                );
+            })(needed_unspent[i]);
+        }
+        input_blinds_and_change.push(
+            tx_sender.call(
+                'http://greenaddressit.com/vault/fund',
+                $scope.wallet.current_subaccount, true, true
+            ).then(function(data) {
+                return $scope.wallet.hdwallet.deriveHardened(
+                    branches.BLINDED
+                ).then(function(branch) {
+                    return branch.deriveHardened(data.pointer);
+                }).then(function(blinded_key) {
+                    return tx_sender.call(
+                        'http://greenaddressit.com/vault/set_scanning_key',
+                        $scope.wallet.current_subaccount,
+                        data.pointer,
+                        Array.from(blinded_key.keyPair.getPublicKeyBuffer())
+                    ).then(function() {
+                        return blinded_key;
+                    })
+                }).then(function(blinded_key) {
+                    return [
+                        blinded_key.keyPair.getPublicKeyBuffer(),
+                        Bitcoin.bitcoin.crypto.hash160(
+                            new Bitcoin.Buffer.Buffer(data.script, 'hex')
+                        )
+                    ];
+                });
+            })
+        );
+        return $q.all(input_blinds_and_change).then(function(input_blinds) {
+            var change = input_blinds.pop();
+            var outs = [null, null];
+            var fee = new Bitcoin.BigInteger('10000');
+            var in_value = new Bitcoin.BigInteger('0');
+            for (var i = 0; i < needed_unspent.length; ++i) {
+                in_value = in_value.add(new Bitcoin.BigInteger(
+                    needed_unspent[i].data.value
+                ));
+            }
+            outs[change_idx] = {
+                value: in_value.subtract(satoshis).subtract(fee),
+                to_version: cur_net.scriptHash,
+                to_scanning_pubkey: change[0],
+                to_hash: change[1]
+            };
+            outs[1-change_idx] = {
+                value: satoshis,
+                to_version: recipient[1],
+                to_scanning_pubkey: recipient.slice(2, 35),
+                to_hash: recipient.slice(35)
+            };
+            var all = (needed_unspent.length + outs.length);
+            var blindptrs = Module._malloc(4 * all);
+            var cur_blindptr = 4 * needed_unspent.length;
+            for (var i = 0; i < all; ++i) {
+                if (i < needed_unspent.length) {
+                    setValue(blindptrs + 4*i, input_blinds[i], '*');
+                } else {
+                    var cur = Module._malloc(32);
+                    setValue(blindptrs + 4*i, cur, '*');
+                    var rand = Bitcoin.randombytes(32);
+                    for (var j = 0; j < 32; ++j) {
+                        setValue(cur + j, rand[j], 'i8');
+                    }
+                }
+            }
+            for (var i = 0; i < outs.length; ++i) {
+                if (i == outs.length - 1) {
+                    Module._secp256k1_pedersen_blind_sum(
+                        Module.secp256k1ctx,
+                        getValue(blindptrs + 4 * (all - 1), '*'),
+                        blindptrs,
+                        all - 1,
+                        needed_unspent.length
+                    );
+                }
+                var commitment = Module._malloc(33);
+                Module._secp256k1_pedersen_commit(
+                    Module.secp256k1ctx,
+                    commitment,
+                    getValue(blindptrs + cur_blindptr, '*'),
+                    +outs[i].value.mod(Bitcoin.BigInteger('2').pow(32)),
+                    +outs[i].value.divide(Bitcoin.BigInteger('2').pow(32))
+                );
+                var commitment_buf = new Bitcoin.Buffer.Buffer(33);
+                for (var j = 0; j < 33; ++j) {
+                    commitment_buf[j] = getValue(
+                        commitment + j, 'i8'
+                    ) & 0xff;
+                }
+                var rangeproof_len = Module._malloc(4);
+                var len = 5134;
+                var rangeproof = Module._malloc(len);
+                var rangeproof_len_buf = new Bitcoin.BigInteger(''+len).toBuffer();
+                while (rangeproof_len_buf.length < 4) {
+                    rangeproof_len_buf = Bitcoin.Buffer.Buffer.concat([
+                        new Bitcoin.Buffer.Buffer([0]),
+                        rangeproof_len_buf
+                    ]);
+                }
+                for (var j = 0; j < 4; ++j) {
+                    setValue(
+                        rangeproof_len+j,
+                        rangeproof_len_buf[4-j-1],
+                        'i8'
+                    );
+                }
+                var ephemeral_key = Bitcoin.bitcoin.ECPair.makeRandom();
+                var secexp_buf = ephemeral_key.d.toBuffer();
+                var secexp = Module._malloc(32);
+                var nonce = Module._malloc(33);
+                var nonce_res = Module._malloc(32);
+                var pubkey_p = Module._malloc(64);
+                var p_arr = Array.from(new Bitcoin.BigInteger(''+pubkey_p).toBuffer());
+                while (p_arr.length < 4) p_arr.unshift(0);
+                for (var j = 0; j < 32; ++j) {
+                    setValue(secexp+j, secexp_buf[j], 'i8');
+                }
+                for (var j = 0; j < 33; ++j) {
+                    setValue(nonce+j, outs[i].to_scanning_pubkey[j], 'i8');
+                }
+                Module._secp256k1_ec_pubkey_parse(
+                    Module.secp256k1ctx,
+                    pubkey_p,
+                    nonce,
+                    33
+                );
+                Module._secp256k1_ecdh(
+                    Module.secp256k1ctx,
+                    nonce_res,
+                    pubkey_p,
+                    secexp
+                );
+                var nonce_buf = new Bitcoin.Buffer.Buffer(32);
+                for (var j = 0; j < 32; ++j) {
+                    nonce_buf[j] = getValue(nonce_res + j, 'i8') & 0xff;
+                }
+                nonce_buf = Bitcoin.bitcoin.crypto.sha256(nonce_buf);
+                for (var j = 0; j < 32; ++j) {
+                    setValue(nonce_res + j, nonce_buf[j], 'i8');
+                }
+                Module._secp256k1_rangeproof_sign(
+                    Module.secp256k1ctx,
+                    rangeproof,
+                    rangeproof_len,
+                    0, 0,
+                    commitment,
+                    getValue(blindptrs + cur_blindptr, '*'),
+                    nonce_res,
+                    0, 32,
+                    +outs[i].value.mod(Bitcoin.BigInteger('2').pow(32)),
+                    +outs[i].value.divide(Bitcoin.BigInteger('2').pow(32))
+                );
+                for (var j = 0; j < 4; ++j) {
+                    rangeproof_len_buf[4-j-1] = getValue(
+                        rangeproof_len+j, 'i8'
+                    ) & 0xff;
+                }
+                len = +Bitcoin.BigInteger(rangeproof_len_buf);
+                var rangeproof_buf = new Bitcoin.Buffer.Buffer(len);
+                for (var j = 0; j < len; ++j) {
+                    rangeproof_buf[j] = getValue(rangeproof+j, 'i8') & 0xff;
+                }
+                cur_blindptr += 4;
+                outs[i].nonce_commitment = ephemeral_key.getPublicKeyBuffer();
+                outs[i].commitment = commitment_buf;
+                outs[i].range_proof = rangeproof_buf;
+            }
+            var tx = new Bitcoin.contrib.AlphaTransactionBuilder(cur_net);
+            for (var i = 0; i < needed_unspent.length; ++i) {
+                tx.addInput(
+                    needed_unspent[i].txhash,
+                    needed_unspent[i].data.pt_idx
+                );
+                //// tx.tx.ins[i].prevOut = needed_unspent[i].out;
+                //// ^- this doesn't work (see comment below)
+            }
+            for (var i = 0; i < outs.length; ++i) {
+                tx.addOutput(
+                    Bitcoin.bitcoin.address.toBase58Check(
+                        outs[i].to_hash, outs[i].to_version
+                    ), 0
+                )
+                tx.tx.outs[i].commitment = outs[i].commitment;
+                tx.tx.outs[i].range_proof = outs[i].range_proof;
+                tx.tx.outs[i].nonce_commitment = outs[i].nonce_commitment;
+            }
+            var signatures_ds = [];
+            for (var i = 0; i < needed_unspent.length; ++i) {
+                (function(i) {
+                    var utxo = needed_unspent[i];
+                    var gawallet = new Bitcoin.bitcoin.HDNode(
+                        Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                            new Bitcoin.Buffer.Buffer(deposit_pubkey, 'hex'),
+                            cur_net
+                        ),
+                        new Bitcoin.Buffer.Buffer(deposit_chaincode, 'hex')
+                    );
+                    var gaKey = gawallet.derive(1).then(function(branch) {
+                        return branch.subpath($scope.wallet.gait_path);
+                    }).then(function(gawallet) {
+                        return gawallet.derive(utxo.data.pubkey_pointer);
+                    });
+                    var userKey = $scope.wallet.hdwallet.derive(
+                        branches.REGULAR
+                    ).then(function(branch) {
+                        return branch.derive(utxo.data.pubkey_pointer)
+                    });
+                    signatures_ds.push($q.all([gaKey, userKey]).then(function(keys) {
+                        var gaKey = keys[0], userKey = keys[1];
+                        var redeemScript = Bitcoin.bitcoin.script.multisigOutput(
+                            2,
+                            [gaKey.keyPair.getPublicKeyBuffer(),
+                             userKey.keyPair.getPublicKeyBuffer()]
+                        )
+                        for (var j = 0; j < tx.tx.ins.length; ++j) {
+                            // this is slightly confusing, but alphad requires
+                            // all ins to serialize with the same prevout,
+                            // even though this prevout is connected to only a
+                            // single input
+                            tx.tx.ins[j].prevOut = needed_unspent[i].out;
+                        }
+
+                        return tx.sign(i, userKey.keyPair, redeemScript, +fee);
+                    }));
+                })(i);
+            }
+            return $q.all(signatures_ds).then(function() {
+                return tx_sender.call(
+                    'http://greenaddressit.com/vault/send_raw_tx',
+                    tx.build().toHex(+fee)
+                );
+            })
+        })
+    };
     walletsService.sign_and_send_tx = function($scope, data, priv_der, twofactor, notify, progress_cb, send_after) {
         var d = $q.defer();
-        var tx = Bitcoin.Transaction.deserialize(data.tx);
+        var tx = Bitcoin.contrib.transactionFromHex(data.tx);
         var prevouts_d;
+        var response;
         if ($scope && ($scope.send_tx || $scope.wallet.trezor_dev)) {
-            prevouts_d = $http.get(data.prevout_rawtxs);
+            prevouts_d = $http.get(data.prevout_rawtxs).then(function(response_) {
+                response = response_;
+            });
+        } else {
+            prevouts_d = $q.when();
         }
         var ask_for_confirmation = function() {
             if (!$scope.send_tx) {
                 // not all txs support this dialog, like redepositing or sweeping
                 return $q.when();
             }
-            return prevouts_d.then(function(response) {
-                var scope = $scope.$new();
-                var in_value = 0, out_value = 0;
-                tx.ins.forEach(function(txin) {
-                    var prevtx = Bitcoin.Transaction.deserialize(response.data[txin.outpoint.hash]);
-                    var prevout = prevtx.outs[txin.outpoint.index];
-                    in_value += prevout.value;
-                });
-                tx.outs.forEach(function(txout) {
-                    out_value += txout.value;
-                });
-                var fee = in_value - out_value, value;
-                if ($scope.send_tx.amount == 'MAX') {
-                    value = $scope.wallet.final_balance - fee;
-                } else {
-                    value = $scope.send_tx.amount_to_satoshis($scope.send_tx.amount);
-                }
-                scope.tx = {
-                    fee: fee,
-                    value: value,
-                    recipient: $scope.send_tx.voucher ?
-                        gettext("Voucher") :
-                        ($scope.send_tx.recipient.name || $scope.send_tx.recipient)
-                };
-                var modal = $modal.open({
-                    templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_confirm_tx.html',
-                    scope: scope,
-                    windowClass: 'twofactor'  // is a 'sibling' to 2fa - show with the same z-index
-                });
-                return modal.result;
+            var scope = $scope.$new();
+            var in_value = 0, out_value = 0;
+            tx.ins.forEach(function(txin) {
+                var rev = new Bitcoin.Buffer.Buffer(txin.hash);
+                rev = Bitcoin.bitcoin.bufferutils.reverse(rev);
+                var prevtx = Bitcoin.contrib.transactionFromHex(
+                    response.data[rev.toString('hex')]
+                );
+                var prevout = prevtx.outs[txin.index];
+                in_value += prevout.value;
             });
+            tx.outs.forEach(function(txout) {
+                out_value += txout.value;
+            });
+            var fee = in_value - out_value, value;
+            if ($scope.send_tx.amount == 'MAX') {
+                value = $scope.wallet.final_balance - fee;
+            } else {
+                value = $scope.send_tx.amount_to_satoshis($scope.send_tx.amount);
+            }
+            scope.tx = {
+                fee: fee,
+                value: value,
+                recipient: $scope.send_tx.voucher ?
+                    gettext("Voucher") :
+                    ($scope.send_tx.recipient.name || $scope.send_tx.recipient)
+            };
+            var modal = $modal.open({
+                templateUrl: BASE_URL+'/'+LANG+'/wallet/partials/wallet_modal_confirm_tx.html',
+                scope: scope,
+                windowClass: 'twofactor'  // is a 'sibling' to 2fa - show with the same z-index
+            });
+            return modal.result;
         }
         var signatures = [], device_deferred = null, signed_n = 0;
         var prevoutToPath = function(prevout, trezor, from_subaccount) {
@@ -644,24 +1098,25 @@ angular.module('greenWalletServices', [])
             }
             return path;
         }
+    var sigds = prevouts_d.then(function() {
         for (var i = 0; i < tx.ins.length; ++i) {
             (function(i) {
                 var key, path = [];
                 if (data.prev_outputs[i].privkey) {
                     key = $q.when(data.prev_outputs[i].privkey);
-                } else if (tx_sender.hdwallet.priv) {
+                } else if (tx_sender.hdwallet.keyPair.d) {
                     if (data.prev_outputs[i].subaccount) {
-                        key = $q.when(tx_sender.hdwallet.derivePrivate(3)).then(function(key) {
-                            return key.derivePrivate(data.prev_outputs[i].subaccount);
+                        key = $q.when(tx_sender.hdwallet.deriveHardened(3)).then(function(key) {
+                            return key.deriveHardened(data.prev_outputs[i].subaccount);
                         });
                     } else {
                         key = $q.when(tx_sender.hdwallet);
                     }
                     if (priv_der) {
                         key = key.then(function(key) {
-                            return key.derivePrivate(data.prev_outputs[i].branch);
+                            return key.deriveHardened(data.prev_outputs[i].branch);
                         }).then(function(key) {
-                            return key.derivePrivate(data.prev_outputs[i].pointer);
+                            return key.deriveHardened(data.prev_outputs[i].pointer);
                         });
                     } else {
                         key = key.then(function(key) {
@@ -671,13 +1126,13 @@ angular.module('greenWalletServices', [])
                         });
                     }
                     key = key.then(function(key) {
-                        return key.priv;
+                        return key.keyPair;
                     });
                 } else {
                     path = prevoutToPath(data.prev_outputs[i]);
                 }
                 if (!key) {
-                    var script = new Bitcoin.Script(Bitcoin.convert.hexToBytes(data.prev_outputs[i].script));
+                    var script = new Bitcoin.Buffer.Buffer(data.prev_outputs[i].script, 'hex');
                     var SIGHASH_ALL = 1;
                     var sign_deferred = $q.defer();
 
@@ -716,28 +1171,59 @@ angular.module('greenWalletServices', [])
                     var sign = key.then(function(key) {
                         signed_n += 1;
                         if (progress_cb) progress_cb(Math.round(100 * signed_n / tx.ins.length));
-                        var script = new Bitcoin.Script(Bitcoin.convert.hexToBytes(data.prev_outputs[i].script));
+                        var script = new Bitcoin.Buffer.Buffer(data.prev_outputs[i].script, 'hex');
                         var SIGHASH_ALL = 1;
-                        var sign = $q.when(key.sign(tx.hashTransactionForSignature(script, i, SIGHASH_ALL)));
+                        var scope = $scope.$new();
+                        var in_value = 0, out_value = 0;
+                        if (cur_net.isAlpha) {
+                            tx.ins.forEach(function(txin) {
+                                var rev = new Bitcoin.Buffer.Buffer(txin.hash);
+                                rev = Bitcoin.bitcoin.bufferutils.reverse(rev);
+                                var prevtx = Bitcoin.contrib.transactionFromHex(
+                                    response.data[rev.toString('hex')]
+                                );
+                                var prevout = prevtx.outs[txin.index];
+                                in_value += prevout.value;
+                                txin.prevValue = prevout.value;
+                            });
+                            tx.outs.forEach(function(txout) {
+                                out_value += txout.value;
+                            });
+                            var fee = in_value - out_value, value;
+                        }
+                        var sign = $q.when(key.sign(tx.hashForSignature(i, script, SIGHASH_ALL, fee)));
                         return sign.then(function(sign) {
-                            sign.push(SIGHASH_ALL)
-                            return Bitcoin.convert.bytesToHex(sign);
+                            var sign_serialized;
+                            if (cur_net.isAlpha) {
+                                sign_serialized = sign;
+                            } else {
+                                sign_serialized = sign.toDER();
+                            }
+                            sign = Bitcoin.Buffer.Buffer.concat([
+                                new Bitcoin.Buffer.Buffer(sign_serialized),
+                                new Bitcoin.Buffer.Buffer([SIGHASH_ALL]),
+                            ]);
+                            return sign.toString('hex');
                         });
                     });
                 }
                 signatures.push(sign);
             })(i);
         }
+        return signatures;
+    });
         if (!send_after) {
             var send_after = $q.when();
         }
         if ($scope && $scope.wallet.trezor_dev) {
             var fromHex = (window.trezor && trezor.ByteBuffer) ? trezor.ByteBuffer.fromHex : function(x) { return x; };
-            var gawallet_hd = new Bitcoin.HDWallet();
-            gawallet_hd.network = cur_net;
-            gawallet_hd.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(deposit_pubkey));
-            gawallet_hd.chaincode = Bitcoin.convert.hexToBytes(deposit_chaincode);
-            gawallet_hd.depth = 0;
+            var gawallet = new Bitcoin.bitcoin.HDNode(
+                Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                    new Bitcoin.Buffer.Buffer(deposit_pubkey, 'hex'),
+                    cur_net
+                ),
+                new Bitcoin.Buffer.Buffer(deposit_chaincode, 'hex')
+            );
             var is_2of3 = false, cur_subaccount, recovery_wallet, recovery_wallet_hd;
             for (var j = 0; j < $scope.wallet.subaccounts.length; j++) {
                 if ($scope.wallet.subaccounts[j].pointer == $scope.wallet.current_subaccount &&
@@ -763,15 +1249,15 @@ angular.module('greenWalletServices', [])
                 depth: 0,
                 child_num: 0,
                 fingerprint: 0,    // FIXME (is it important?): real fingerprint
-                chain_code: fromHex(Bitcoin.convert.bytesToHex($scope.wallet.hdwallet.chaincode)),
-                public_key: fromHex($scope.wallet.hdwallet.pub.toHex())
+                chain_code: fromHex($scope.wallet.hdwallet.chainCode.toString('hex')),
+                public_key: fromHex($scope.wallet.hdwallet.keyPair.getPublicKeyBuffer().toString('hex'))
             };
-            var path_bytes = Bitcoin.convert.hexToBytes($scope.wallet.gait_path), ga_path = [];
+            var path_bytes = new Bitcoin.Buffer.Buffer($scope.wallet.gait_path, 'hex'), ga_path = [];
             for (var i = 0; i < 32; i++) {
                 ga_path.push(+Bitcoin.BigInteger.fromByteArrayUnsigned(path_bytes.slice(0, 2)));
-                path_bytes.shift(); path_bytes.shift();
+                path_bytes = path_bytes.slice(2);
             }
-            var script_to_hash = new Bitcoin.Script();
+            var script_to_hash = [];
             var change_key_bytes, recovery_wallet;
             var d_all = gawallet_path.then(function(gawallet_path_result) {
                 gawallet_path = gawallet_path_result;
@@ -779,26 +1265,30 @@ angular.module('greenWalletServices', [])
                     depth: 33,
                     child_num: 0,   // FIXME (is it important?): real child_num
                     fingerprint: 0,   // FIXME (is it important?): real fingerprint
-                    chain_code: fromHex(Bitcoin.convert.bytesToHex(gawallet_path.chaincode)),
-                    public_key: fromHex(gawallet_path.pub.toHex())
+                    chain_code: fromHex(gawallet_path.chainCode.toString('hex')),
+                    public_key: fromHex(gawallet_path.keyPair.getPublicKeyBuffer().toString('hex'))
                 };
                 if ($scope.wallet.current_subaccount) {
                     return $scope.wallet.trezor_dev.getPublicKey(
                         [branches.SUBACCOUNT + 0x80000000, $scope.wallet.current_subaccount + 0x80000000]
                     ).then(function(pubkey) {
                         var hd = new Bitcoin.HDWallet();
-                        hd.network = cur_net;
                         var pk = pubkey.message.node.public_key; pk = pk.toHex ? pk.toHex() : pk;
-                        hd.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(pk), true);
                         var cc = pubkey.message.node.chain_code; cc = cc.toHex ? cc.toHex() : cc;
-                        hd.chaincode = Bitcoin.convert.hexToBytes(cc);
+                        var hd = new Bitcoin.bitcoin.HDNode(
+                            Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                                new Bitcoin.Buffer.Buffer(pk, 'hex'),
+                                cur_net
+                            ),
+                            new Bitcoin.Buffer.Buffer(cc, 'hex')
+                        );
 
                         hdwallet = {
                             depth: 0,
                             child_num: 0,
                             fingerprint: 0,    // FIXME (is it important?): real fingerprint
-                            chain_code: fromHex(Bitcoin.convert.bytesToHex(hd.chaincode)),
-                            public_key: fromHex(hd.pub.toHex())
+                            chain_code: fromHex(hd.chainCode.toString('hex')),
+                            public_key: fromHex(hd.keyPair.getPublicKeyBuffer().toString('hex'))
                         };
 
                         return hd.derive(1);
@@ -809,16 +1299,17 @@ angular.module('greenWalletServices', [])
             }).then(function(hdwallet_branch) {
                 return hdwallet_branch.derive(data.change_pointer);
             }).then(function(change_key) {
-                change_key_bytes = change_key.pub.toBytes(true);
+                change_key_bytes = change_key.keyPair.getPublicKeyBuffer();
                 return gawallet_path.derive(data.change_pointer)
             }).then(function(change_gait_key) {
                 if (is_2of3) {
-                    var recovery_wallet_hd = new Bitcoin.HDWallet();
-                    recovery_wallet_hd.network = cur_net;
-                    recovery_wallet_hd.pub = new Bitcoin.ECPubKey(Bitcoin.convert.hexToBytes(cur_subaccount['2of3_backup_pubkey']));
-                    recovery_wallet_hd.chaincode = Bitcoin.convert.hexToBytes(cur_subaccount['2of3_backup_chaincode']);
-                    recovery_wallet_hd.depth = 0;
-                    recovery_wallet_hd.index = 0;
+                    var recovery_wallet_hd = new Bitcoin.bitcoin.HDNode(
+                        Bitcoin.bitcoin.ECPair.fromPublicKeyBuffer(
+                            new Bitcoin.Buffer.Buffer(cur_subaccount['2of3_backup_pubkey'], 'hex'),
+                            cur_net
+                        ),
+                        new Bitcoin.Buffer.Buffer(cur_subaccount['2of3_backup_chaincode'], 'hex')
+                    );
                     recovery_wallet = {
                         depth: 0,
                         child_num: 0,
@@ -829,24 +1320,32 @@ angular.module('greenWalletServices', [])
                     return recovery_wallet_hd.derive(1).then(function(branch) {
                         return branch.derive(data.change_pointer);
                     }).then(function(change_key_recovery) {
-                        return [change_gait_key.pub.toBytes(true), change_key_bytes,
-                                change_key_recovery.pub.toBytes()];
+                        return [change_gait_key.keyPair.getPublicKeyBuffer(),
+                                change_key_bytes,
+                                change_key_recovery.keyPair.getPublicKeyBuffer()];
                     });
                 } else {
-                    return [change_gait_key.pub.toBytes(true), change_key_bytes];
+                    return [change_gait_key.keyPair.getPublicKeyBuffer(), change_key_bytes];
                 }
             }).then(function(keys) {
-                script_to_hash.writeOp(Bitcoin.Opcode.map.OP_2);
-                script_to_hash.writeBytes(keys[0]);
-                script_to_hash.writeBytes(keys[1]);
+                script_to_hash.push(Bitcoin.bitcoin.opcodes.OP_2);
+                script_to_hash.push(keys[0]);
+                script_to_hash.push(keys[1]);
                 if (is_2of3) {
-                    script_to_hash.writeBytes(keys[2]);
-                    script_to_hash.writeOp(Bitcoin.Opcode.map.OP_3);
+                    script_to_hash.push(keys[2]);
+                    script_to_hash.push(Bitcoin.bitcoin.opcodes.OP_3);
                 } else {
-                    script_to_hash.writeOp(Bitcoin.Opcode.map.OP_2);
+                    script_to_hash.push(Bitcoin.bitcoin.opcodes.OP_2);
                 }
-                script_to_hash.writeOp(Bitcoin.Opcode.map.OP_CHECKMULTISIG);
-                var change_addr = new Bitcoin.Address(script_to_hash.toScriptHash(), Bitcoin.network[cur_net].p2shVersion).toString();
+                script_to_hash.push(Bitcoin.bitcoin.opcodes.OP_CHECKMULTISIG);
+                var change_addr = Bitcoin.bitcoin.script.scriptHashOutput(
+                    Bitcoin.bitcoin.crypto.hash160(
+                        Bitcoin.bitcoin.Address.fromOutputScript(
+                            Bitcoin.bitcoin.script.compile(script_to_hash),
+                            cur_net.scriptHash
+                        )
+                    )
+                );
                 var get_pubkeys = function(prevout, is2of3) {
                     var ret = [{node: gawallet,
                                 address_n: [prevout.pointer]},
@@ -860,10 +1359,10 @@ angular.module('greenWalletServices', [])
                 }
                 var txs_dict = {}, inputs = [];
                 for (var i = 0; i < tx.ins.length; ++i) {
-                    txs_dict[tx.ins[i].outpoint.hash] = true;
+                    txs_dict[tx.ins[i].hash] = true;
                     inputs.push({address_n: prevoutToPath(data.prev_outputs[i], true),
-                                   prev_hash: fromHex(tx.ins[i].outpoint.hash),
-                                   prev_index: tx.ins[i].outpoint.index,
+                                   prev_hash: fromHex(tx.ins[i].hash),
+                                   prev_index: tx.ins[i].index,
                                    script_type: (window.trezor && trezor.ByteBuffer) ? 1 : 'SPENDMULTISIG',
                                    multisig: {
                                        pubkeys: get_pubkeys(data.prev_outputs[i], is_2of3),
@@ -875,12 +1374,10 @@ angular.module('greenWalletServices', [])
                     return ins.map(function(inp) {
                         var fromHex = (window.trezor && trezor.ByteBuffer) ? trezor.ByteBuffer.fromHex : function(x) { return x; };
                         return {
-                            prev_hash: fromHex(inp.outpoint.hash),
-                            prev_index: inp.outpoint.index,
-                            script_sig: fromHex(
-                                Bitcoin.convert.bytesToHex(inp.script.buffer)),
-                            sequence: parseInt(Bitcoin.BigInteger.
-                                fromByteArrayUnsigned(inp.sequence).toString())
+                            prev_hash: fromHex(inp.hash),
+                            prev_index: inp.index,
+                            script_sig: fromHex(inp.script.toString('hex')),
+                            sequence: parseInt(inp.sequence).toString()
                         }
                     })
                 }
@@ -923,8 +1420,7 @@ angular.module('greenWalletServices', [])
                         var fromHex = (window.trezor && trezor.ByteBuffer) ? trezor.ByteBuffer.fromHex : function(x) { return x; };
                         return {
                             amount: out.value,
-                            script_pubkey: fromHex(
-                                Bitcoin.convert.bytesToHex(out.script.buffer))
+                            script_pubkey: fromHex(out.script.toString('hex'))
                         };
                     })
                 }
@@ -950,7 +1446,9 @@ angular.module('greenWalletServices', [])
                 });
             });
         } else {
-            var d_all = $q.all(signatures);
+            var d_all = sigds.then(function(signatures) {
+                return $q.all(signatures);
+            });
         }
         d_all = d_all.then(function(signatures) {
             return ask_for_confirmation().then(function() {
@@ -1147,14 +1645,15 @@ angular.module('greenWalletServices', [])
             walletsService.set_last_fiat_update($scope);
         }, 1000)
     };
-    walletsService.create_pin = function(pin, $scope) {
+    walletsService.create_pin = function(pin, $scope, suffix) {
+        suffix = suffix || '';
         var do_create = function() {
             var deferred = $q.defer();
             tx_sender.call('http://greenaddressit.com/pin/set_pin_login', pin, 'Primary').then(
                 function(data) {
                     if (data) {
-                        var pin_ident = tx_sender.pin_ident = data;
-                        storage.set('pin_ident', pin_ident);
+                        var pin_ident = tx_sender['pin_ident'+suffix] = data;
+                        storage.set('pin_ident'+suffix, pin_ident);
                         tx_sender.call('http://greenaddressit.com/pin/get_password', pin, data).then(
                             function(password) {
                                 if (!$scope.wallet.hdwallet.seed_hex) {
@@ -1166,7 +1665,7 @@ angular.module('greenWalletServices', [])
                                                                'path_seed': $scope.wallet.gait_path_seed,
                                                                'mnemonic': $scope.wallet.mnemonic});
                                     crypto.encrypt(data, password).then(function(encrypted) {
-                                        storage.set('encrypted_seed', encrypted);
+                                        storage.set('encrypted_seed'+suffix, encrypted);
                                     });
                                     tx_sender.pin = pin;
                                     deferred.resolve(pin_ident);
@@ -1186,7 +1685,7 @@ angular.module('greenWalletServices', [])
             return deferred.promise;
         };
         if (!tx_sender.logged_in) {
-            return $q.when(Bitcoin.HDWallet.fromSeedHex($scope.wallet.hdwallet.seed_hex, cur_net)).then(function(hdwallet) {
+            return $q.when(Bitcoin.bitcoin.HDNode.fromSeedHex($scope.wallet.hdwallet.seed_hex, cur_net)).then(function(hdwallet) {
                 hdwallet.seed_hex = $scope.wallet.hdwallet.seed_hex;
                 return walletsService.login($scope||{wallet:{}}, hdwallet,
                         $scope.wallet.mnemonic, false, false, $scope.wallet.gait_path_seed).then(function() {
@@ -1331,10 +1830,8 @@ angular.module('greenWalletServices', [])
         cordovaReady(function() {
             document.addEventListener("resume", function() {
                 if (!txSenderService.wallet || !txSenderService.logged_in) return;
-                if (session) {
-                    session.close();  // reconnect on resume
-                } else if (session_for_login) {
-                    session_for_login.close();
+                if (session || session_for_login) {
+                    connection.close();  // reconnect on resume
                 }
                 session = session_for_login = null;
                 disconnected = true;
@@ -1447,6 +1944,7 @@ angular.module('greenWalletServices', [])
             }
             connection.onclose = function() {
                 session = session_for_login = null;
+                disconnected = true;
             }
             connection.onopen =
                 function(s) {
@@ -1506,25 +2004,27 @@ angular.module('greenWalletServices', [])
         } else {
             var hdwallet = txSenderService.hdwallet;
             attempt_login = true;
-            if (hdwallet.priv) {
+            if (hdwallet.keyPair.d) {
                 if (session_for_login) {
                     session_for_login.call('com.greenaddress.login.get_challenge',
                             [hdwallet.getAddress().toString()]).then(function(challenge) {
-                        var challenge_bytes = new Bitcoin.BigInteger(challenge).toByteArrayUnsigned();
+
+                        var challenge_bytes = new Bitcoin.BigInteger(challenge).toBuffer();
 
                         // generate random path to derive key from - avoids signing using the same key twice
-                        var max64int_hex = '';
-                        while (max64int_hex.length < 16) max64int_hex += 'F';
-                        var TWOPOWER64 = new Bitcoin.BigInteger(max64int_hex, 16).add(Bitcoin.BigInteger.ONE);
-                        var random_path_hex = Bitcoin.ecdsa.getBigRandom(TWOPOWER64).toString(16);
+                        var random_path_hex = new Bitcoin.BigInteger.fromBuffer(
+                            Bitcoin.randombytes(8)
+                        ).toString(16);
                         while (random_path_hex.length < 16) random_path_hex = '0' + random_path_hex;
                         $q.when(hdwallet.subpath_for_login(random_path_hex)).then(function(subhd) {
-                            $q.when(subhd.priv.sign(challenge_bytes)).then(function(signature) {
-                                signature = Bitcoin.ecdsa.parseSig(signature);
+                            $q.when(subhd.keyPair.sign(challenge_bytes)).then(function(signature) {
                                 d_main.resolve(device_id().then(function(devid) {
                                     if (session_for_login && session_for_login.nc == nconn) {
+                                        if (!cur_net.isAlpha) {
+                                            signature = [signature.r.toString(), signature.s.toString()];
+                                        }
                                         return session_for_login.call('com.greenaddress.login.authenticate',
-                                                [[signature.r.toString(), signature.s.toString()], logout||false,
+                                                [signature, logout||false,
                                                  random_path_hex, devid, user_agent]).then(function(data) {
                                             if (data) {
                                                 txSenderService.logged_in = data;
@@ -1601,7 +2101,9 @@ angular.module('greenWalletServices', [])
                                         {'message': msg, address_n: path}).then(function(res) {
                                     var sig = res.message.signature;
                                     sig = sig.toHex ? sig.toHex() : sig;
-                                    var signature = Bitcoin.ecdsa.parseSigCompact(Bitcoin.convert.hexToBytes(sig));
+                                    var signature = Bitcoin.bitcoin.ECSignature.parseCompat(
+                                        new Bitcoin.Buffer.Buffer(sig, 'hex')
+                                    );
                                     trezor_dev.signing = false;
                                     return device_id().then(function(devid) {
                                         return session_for_login.call('com.greenaddress.login.authenticate',
@@ -1624,12 +2126,17 @@ angular.module('greenWalletServices', [])
                                     return btchip_dev.signMessagePrepare_async(path.join('/'), new ByteString(msg, HEX)).then(function(result) {
                                         return btchip_dev.app.signMessageSign_async(new ByteString("00", HEX)).then(function(result) {
                                             waiting_for_device = false;
-                                            var signature = Bitcoin.ecdsa.parseSig(Bitcoin.convert.hexToBytes("30" + result.bytes(1).toString(HEX)));
+                                            var signature = Bitcoin.bitcoin.ECSignature.fromDER(
+                                                new Bitcoin.Buffer.Buffer("30" + result.bytes(1).toString(HEX), 'hex')
+                                            );
                                             if (btchip_dev.features.signMessageRecoveryParam) {
                                                 var i = result.byteAt(0) & 0x01;
                                             } else {
                                                 var i = Bitcoin.ecdsa.calcPubKeyRecoveryParam(
-                                                    result_pk.pub.pub, signature.r, signature.s, Bitcoin.Message.magicHash(msg_plain));
+                                                    Bitcoin.BigInteger.fromBuffer(Bitcoin.message.magicHash(msg_plain)),
+                                                    {r: signature.r, s: signature.s},
+                                                    result_pk.keyPair.Q
+                                                )
                                             }
                                             return device_id().then(function(devid) {
                                                 if (session_for_login && session_for_login.nc == nconn) {
@@ -1669,6 +2176,7 @@ angular.module('greenWalletServices', [])
         if (session) {
             connection.close();
             session = session_lor_login = null;
+            disconnected = true;
         }
         for (var key in calls_missed) {
             delete calls_missed[key];
@@ -1682,6 +2190,8 @@ angular.module('greenWalletServices', [])
         txSenderService.hdwallet = undefined;
         txSenderService.trezor_dev = undefined;
         txSenderService.watch_only = undefined;
+        txSenderService.pin_ident = undefined;
+        txSenderService.has_pin = undefined;
         if (txSenderService.wallet) txSenderService.wallet.clear();
     };
     txSenderService.loginWatchOnly = function(token_type, token, logout) {
@@ -2756,11 +3266,15 @@ angular.module('greenWalletServices', [])
                     var inputs = [];
                     for (var j = 0; j < tx.ins.length; j++) {
                         var input = tx.ins[j];
-                        var txhash = Bitcoin.convert.bytesToHex(Bitcoin.convert.hexToBytes(input.outpoint.hash).reverse());
-                        var outpoint = Bitcoin.convert.bytesToHex(Bitcoin.convert.numToBytes(parseInt(input.outpoint.index), 4));
+                        var txhash = Bitcoin.bitcoin.bufferutils.reverse(
+                            input.hash
+                        ).toString('hex');
+                        var outpoint = new Bitcoin.Buffer.Buffer(4);
+                        idx_buf.writeUInt32LE(input.index, 0);
+                        outpoint = outpoint.toString('hex');
                         inputs.push(txhash + outpoint);
                     }
-                    var script = Bitcoin.convert.bytesToHex(tx.ins[i].script.buffer);
+                    var script = tx.ins[i].script.toString('hex');
                     cordova.exec(function(result) {
                         d.resolve(result);
                     }, function(fail) {
@@ -2774,7 +3288,7 @@ angular.module('greenWalletServices', [])
                         d.resolve(result);
                     }, function(fail) {
                         d.reject(fail);
-                    }, "BTChip", "finalizeInputFull", [Bitcoin.convert.bytesToHex(tx.serializeOutputs())]);
+                    }, "BTChip", "finalizeInputFull", [tx.serializeOutputs().toString('hex')]);
                     return d.promise;
                 },
                 signTransaction_async: function(path) {
@@ -3177,7 +3691,7 @@ angular.module('greenWalletServices', [])
                     d.resolve({data: result});
                 }, function(fail) {
                     d.reject(fail);
-                }, "BIP38", method, [data, password]);
+                }, "BIP38", method, [Array.from(data), password]);
             })();
         } else if (is_chrome_app) {
             var process = function() {
@@ -3247,25 +3761,9 @@ angular.module('greenWalletServices', [])
 }]).factory('encode_key', ['$q', function($q) {
     var iframe;
     return function(key, passphrase) {
-        var base58Check = {
-          encode: function(buf) {
-            var checkedBuf = [].concat(buf);
-            var buf_words = Bitcoin.convert.bytesToWordArray(buf);
-            var hash = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(buf_words));
-            hash = Bitcoin.convert.wordArrayToBytes(hash);
-            checkedBuf = checkedBuf.concat(hash.slice(0, 4));
-            return Bitcoin.base58.encode(checkedBuf);
-          }
-        };
-        var data = key.priv.toBytes();
+        var data = key.keyPair;
         if (!passphrase) {
-            if (cur_net == 'testnet') {
-                var version = 0xef;
-            } else {
-                var version = 0x80;
-            }
-            data.unshift(version);
-            return $q.when(base58Check.encode(data));
+            return $q.when(data.toWIF());
         } else {
             var is_chrome_app = window.chrome && chrome.storage;
             var d = $q.defer();
@@ -3277,8 +3775,11 @@ angular.module('greenWalletServices', [])
                         $rootScope.decrementLoading();
                         notices.makeNotice('error', fail);
                         d.reject(fail);
-                    }, "BIP38", "encrypt", [data, passphrase,
-                            'BTC']);  // probably not correct for testnet, but simpler, and compatible with our JS impl
+                    }, "BIP38", "encrypt", [
+                        Array.from(data.d.toBuffer()),
+                        passphrase,
+                        (cur_net === Bitcoin.bitcoin.networks.bitcoin ?
+                            'BTC' : 'BTT')]);
                 })();
             } else if (is_chrome_app) {
                 var process = function() {
@@ -3288,7 +3789,7 @@ angular.module('greenWalletServices', [])
                     };
                     window.addEventListener('message', listener);
                     iframe.contentWindow.postMessage({
-                        eckey: key.priv.toWif(Bitcoin.network[cur_net].addressVersion),
+                        eckey: data.toWIF(),
                         network: cur_net,
                         password: passphrase
                     }, '*');
@@ -3314,7 +3815,7 @@ angular.module('greenWalletServices', [])
                     d.resolve(message.data);
                 }
                 worker.postMessage({
-                    eckey: key.priv.toWif(Bitcoin.network[cur_net].addressVersion),
+                    eckey: data.toWIF(),
                     network: cur_net,
                     password: passphrase
                 });

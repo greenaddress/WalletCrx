@@ -1,7 +1,7 @@
 angular.module('greenWalletReceiveControllers',
     ['greenWalletServices'])
-.controller('ReceiveController', ['$rootScope', '$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent', '$modal', '$location', 'qrcode', 'clipboard',
-        function InfoController($rootScope, $scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent, $modal, $location, qrcode, clipboard) {
+.controller('ReceiveController', ['$rootScope', '$scope', 'wallets', 'tx_sender', 'notices', 'cordovaReady', 'hostname', 'gaEvent', '$modal', '$location', 'qrcode', 'clipboard', 'branches', '$q',
+        function InfoController($rootScope, $scope, wallets, tx_sender, notices, cordovaReady, hostname, gaEvent, $modal, $location, qrcode, clipboard, branches, $q) {
     if(!wallets.requireWallet($scope)) return;
     $scope.wallet.signup = false;  // required for 2FA settings to work properly in the same session as signup
 
@@ -35,13 +35,13 @@ angular.module('greenWalletReceiveControllers',
             }).finally(function() { $rootScope.decrementLoading(); });
         },
         is_bip38: function(privkey) {
-            return Bitcoin.BIP38.isBIP38Format(privkey);
+            return new Bitcoin.bip38().verify(privkey);
         },
         sweep: function() {
             var do_sweep_key = function(key) {
-                var pubkey = key.getPub(compressed);
+                var pubkey = key.getPublicKeyBuffer();
                 that.sweeping = true;
-                tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social", pubkey.toBytes(), true).then(function(data) {
+                tx_sender.call("http://greenaddressit.com/vault/prepare_sweep_social", Array.from(pubkey), true).then(function(data) {
                     data.prev_outputs = [];
                     for (var i = 0; i < data.prevout_scripts.length; i++) {
                         data.prev_outputs.push(
@@ -66,7 +66,7 @@ angular.module('greenWalletReceiveControllers',
             var that = this;
             var key_wif = this.privkey_wif;
             var iframe;
-            if (Bitcoin.BIP38.isBIP38Format(key_wif)) {
+            if (new Bitcoin.bip38().verify(key_wif)) {
                 that.sweeping = true;
                 var errors = {
                     invalid_privkey: gettext('Not a valid encrypted private key'),
@@ -77,7 +77,7 @@ angular.module('greenWalletReceiveControllers',
                     cordovaReady(function() {
                         cordova.exec(function(data) {
                             $scope.$apply(function() {
-                                do_sweep_key(new Bitcoin.ECKey(data));
+                                do_sweep_key(Bitcoin.Bitcoin.bitcoin.ECPair.fromWIF(data));
                             });
                         }, function(fail) {
                             that.sweeping = false;
@@ -93,11 +93,13 @@ angular.module('greenWalletReceiveControllers',
                             if (message.data.error) {
                                 notices.makeNotice('error', errors[message.data.error] || message.data.error);
                             } else {
-                                do_sweep_key(new Bitcoin.ECKey(message.data));
+                                do_sweep_key(new Bitcoin.bitcoin.ECPair(
+                                    Bitcoin.BigInteger.fromByteArrayUnsigned(message.data),
+                                    null, {network: cur_net}));
                             }
                         };
                         window.addEventListener('message', listener);
-                        iframe.contentWindow.postMessage({b58: key_wif, password: that.bip38_password, cur_net: cur_net}, '*');
+                        iframe.contentWindow.postMessage({b58: key_wif, password: that.bip38_password, cur_net_wif: cur_net.wif}, '*');
                     };
                     if (!iframe) {
                         if (document.getElementById("id_iframe_receive_bip38")) {
@@ -121,23 +123,25 @@ angular.module('greenWalletReceiveControllers',
                         if (message.data.error) {
                             notices.makeNotice('error', errors[message.data.error] || message.data.error);
                         } else {
-                            do_sweep_key(new Bitcoin.ECKey(message.data));
+                            do_sweep_key(new Bitcoin.bitcoin.ECPair(
+                                Bitcoin.BigInteger.fromByteArrayUnsigned(message.data),
+                                null,
+                                {network: cur_net})
+                            );
                         }
                     }
-                    worker.postMessage({b58: key_wif, password: this.bip38_password, cur_net: cur_net});
+                    worker.postMessage({b58: key_wif, password: this.bip38_password, cur_net_wif: cur_net.wif});
                 }
             } else if (key_wif.indexOf('K') == 0 || key_wif.indexOf('L') == 0 || key_wif.indexOf('5') == 0 // prodnet
                     || encrypted_key.indexOf('c') == 0 || encrypted_key.indexOf('9') == 0) { // testnet
-                var key_bytes = Bitcoin.base58.decode(key_wif);
+                var key_bytes = Bitcoin.bs58.decode(key_wif);
                 if (key_bytes.length != 38 && key_bytes.length != 37) {
                     notices.makeNotice(gettext('Not a valid private key'));
                     return;
                 }
                 var expChecksum = key_bytes.slice(-4);
                 key_bytes = key_bytes.slice(0, -4);
-                var key_words = Bitcoin.convert.bytesToWordArray(key_bytes);
-                var checksum = Bitcoin.CryptoJS.SHA256(Bitcoin.CryptoJS.SHA256(key_words));
-                checksum = Bitcoin.convert.wordArrayToBytes(checksum);
+                var checksum = Bitcoin.bitcoin.crypto.hash256(key_bytes);
                 if (checksum[0] != expChecksum[0] || checksum[1] != expChecksum[1] || checksum[2] != expChecksum[2] || checksum[3] != expChecksum[3]) {
                     notices.makeNotice(gettext('Not a valid private key'));
                     return;
@@ -149,7 +153,12 @@ angular.module('greenWalletReceiveControllers',
                     key_bytes = key_bytes.slice(1);
                     var compressed = false;
                 }
-                do_sweep_key(new Bitcoin.ECKey(Bitcoin.convert.bytesToHex(key_bytes)));
+                do_sweep_key(
+                    new Bitcoin.bitcoin.ECPair(
+                        Bitcoin.BigInteger.fromByteArrayUnsigned(key_bytes),
+                        null,
+                        {network: cur_net})
+                );
             } else {
                 notices.makeNotice(gettext('Not a valid private key'));
                 return;
@@ -187,19 +196,64 @@ angular.module('greenWalletReceiveControllers',
             if (show_qr) $scope.show_url_qr($scope.receive.bitcoin_uri);
         } else {
             gaEvent('Wallet', 'ReceiveShowBitcoinUri');
-            tx_sender.call('http://greenaddressit.com/vault/fund', $scope.wallet.current_subaccount).then(function(data) {
-                var script = Bitcoin.convert.bytesToWordArray(Bitcoin.convert.hexToBytes(data));
-                var hash = Bitcoin.convert.wordArrayToBytes(Bitcoin.Util.sha256ripe160(script));
-                var version = Bitcoin.network[cur_net].p2shVersion;
-                var address = new Bitcoin.Address(hash, version);
-                $scope.receive.bitcoin_address = address.toString();
-                $scope.receive.base_bitcoin_uri = $scope.receive.bitcoin_uri = 'bitcoin:' + address.toString();
-                if ($scope.receive.amount) {
-                    $scope.receive.bitcoin_uri += '?amount=' + formatAmountBitcoin($scope.receive.amount);
+            var confidential = cur_net.isAlpha;
+            var args = [
+                'http://greenaddressit.com/vault/fund',
+                $scope.wallet.current_subaccount,
+                confidential
+            ];
+            if (confidential) {
+                // old server doesn't support the 3rd argument
+                args.push(true);
+            }
+            tx_sender.call.apply(tx_sender, args).then(function(data) {
+                var address;
+                if (confidential) {
+                    address = $scope.wallet.hdwallet.deriveHardened(branches.BLINDED).then(function(branch) {
+                        return branch.deriveHardened(data.pointer);
+                    }).then(function(blinded_key) {
+                        var version;
+                        if (cur_net === Bitcoin.bitcoin.networks.bitcoin) {
+                            version = 10;
+                        } else {
+                            version = 25;
+                        }
+                        return tx_sender.call(
+                            'http://greenaddressit.com/vault/set_scanning_key',
+                            $scope.wallet.current_subaccount,
+                            data.pointer,
+                            Array.from(blinded_key.keyPair.getPublicKeyBuffer())
+                        ).then(function() {
+                            return Bitcoin.bs58check.encode(Bitcoin.Buffer.Buffer.concat([
+                                new Bitcoin.Buffer.Buffer([version, cur_net.scriptHash]),
+                                blinded_key.keyPair.getPublicKeyBuffer(),
+                                Bitcoin.bitcoin.crypto.hash160(
+                                    new Bitcoin.Buffer.Buffer(data.script, 'hex')
+                                )
+                            ]));
+                        });
+                    });
+                } else {
+                    var script = new Bitcoin.Buffer.Buffer(data, 'hex');
+                    var hash = Bitcoin.bitcoin.crypto.hash160(script);
+                    var version = cur_net.scriptHash;
+                    address = $q.when(
+                        Bitcoin.bitcoin.address.toBase58Check(hash, cur_net.scriptHash)
+                    );
                 }
+                address.then(function(address) {
+                    $scope.receive.bitcoin_address = address;
+                    $scope.receive.base_bitcoin_uri = $scope.receive.bitcoin_uri = 'bitcoin:' + address;
+                    if ($scope.receive.amount) {
+                        $scope.receive.bitcoin_uri += '?amount=' + formatAmountBitcoin($scope.receive.amount);
+                    }
+                });
                 if (show_qr) $scope.show_url_qr($scope.receive.bitcoin_uri);
             });
         }
+    }
+    $scope.show_confidential_uri = function() {
+        return $scope.show_bitcoin_uri(false, true);
     }
     $scope.show_myaddr_qrcode = function(addr) {
         $scope.show_url_qr('bitcoin:' + addr);
