@@ -3,4 +3,5 @@
 .*.swo
 manifest_mainnet.json
 static/wallet/config_mainnet.js
+static/wallet/network_mainnet.js
 

@@ -34,22 +34,9 @@
              "productId": 1}
         ]}
     ],
-    "sockets": {
-        "tcp":  {"connect": ["electrum.jdubya.info:50001",
-                             "vps.hsmiths.com:50001",
-                             "ecdsa.net:50001",
-                             "electrum.be:50001",
-                             "electrum.drollette.com:50001",
-                             "electrum.no-ip.org:50001",
-                             "electrum.thwg.org:50001",
-                             "electrum0.electricnewyear.net:50001",
-                             "erbium1.sytes.net:50001",
-                             "kirsche.emzy.de:50001",
-                             "us.electrum.be:50001"]}
-    },
     "icons": { "16": "icon16.png",
                "48": "icon48.png",
               "128": "icon128.png" },
     "name": "GreenAddress",
-    "version": "0.0.76"
+    "version": "0.0.77"
 }
