@@ -19,9 +19,9 @@ limitations under the License.
 require('Card');
 
 var BTChip = Class.create({
-	
+
 	/**
-	 * @class Communication with Bitcoin application over a {@link Card} 
+	 * @class Communication with Bitcoin application over a {@link Card}
 	 * @param {Object} @Card implementing the Bitcoin application
 	 * @constructs
 	 */
@@ -68,14 +68,14 @@ var BTChip = Class.create({
 	        }
 	    }
         return result;
-	},	
+	},
 
 	setKeymapEncoding_async: function(keymapEncoding) {
 		if (typeof keymapEncoding == "undefined") {
 			keymapEncoding = BTChip.QWERTY_KEYMAP_NEW;
 		}
 		return this.card.sendApdu_async(0xe0, 0x28, 0x00, 0x00, keymapEncoding, [0x9000]);
-	},	
+	},
 
 	setupNew_async: function(modeMask, featuresMask, version, versionP2sh, pin, wipePin, bip32Seed, wrappingKey) {
 		if (typeof modeMask == "undefined") {
@@ -120,7 +120,7 @@ var BTChip = Class.create({
 		  resultList['keyWrappingKey'] = result.bytes(offset, 16);
 		  return resultList;
         });
-	},	
+	},
 
 	setup_async: function(modeMask, version, versionP2sh, pin, wipePin, keymapEncodings, restoreSeed, bip32SeedOrEntropy, wrappingKey) {
 		if (typeof modeMask == "undefined") {
@@ -148,7 +148,7 @@ var BTChip = Class.create({
 		}
 		data += Convert.toHexByte(restoreSeed ? 0x01 : 0x00);
 		if (typeof bip32SeedOrEntropy == "undefined") {
-			for (var i=0; i<32; i++) {	
+			for (var i=0; i<32; i++) {
 				data += "00";
 			}
 		}
@@ -209,7 +209,7 @@ var BTChip = Class.create({
 		var path = this.parseBIP32Path(path);
 		var p1;
 		if (this.deprecatedBIP32Derivation) {
-			var account, chainIndex, internalChain;			
+			var account, chainIndex, internalChain;
 			if (path.length != 3) {
 				throw "Invalid BIP 32 path for deprecated BIP32 derivation";
 			}
@@ -244,7 +244,7 @@ var BTChip = Class.create({
 		var data;
 		var path = this.parseBIP32Path(path);
 		if (this.deprecatedBIP32Derivation) {
-			var account, chainIndex, internalChain;			
+			var account, chainIndex, internalChain;
 			if (path.length != 3) {
 				throw "Invalid BIP 32 path for deprecated BIP32 derivation";
 			}
@@ -259,7 +259,7 @@ var BTChip = Class.create({
 			for (var i=0; i<path.length; i++) {
 				data = data.concat(path[i]);
 			}
-		}		
+		}
 		data = data.concat(new ByteString(Convert.toHexByte(message.length), HEX));
 		data = data.concat(message);
 		return this.card.sendApdu_async(0xe0, 0x4e, 0x00, 0x00, data);
@@ -295,7 +295,7 @@ var BTChip = Class.create({
 		data = data.concat(new ByteString(Convert.toHexByte(hash.length), HEX));
 		data = data.concat(hash);
 		data = data.concat(signature);
-		return this.card.sendApdu_async(0xe0, 0x40, 0x80, 0x00, data, [0x9000]);		
+		return this.card.sendApdu_async(0xe0, 0x40, 0x80, 0x00, data, [0x9000]);
 	},
 
 	getTrustedInputRaw_async: function(firstRound, indexLookup, transactionData) {
@@ -313,7 +313,7 @@ var BTChip = Class.create({
 	getTrustedInput_async: function(indexLookup, transaction) {
           var currentObject = this;
           var deferred = Q.defer();
-          var processScriptBlocks = function(script) {          	
+          var processScriptBlocks = function(script) {
           	  var internalPromise = Q.defer();
           	  var scriptBlocks = [];
           	  var offset = 0;
@@ -329,7 +329,7 @@ var BTChip = Class.create({
     	              finishedCallback();
         	        }).fail(function (err) { internalPromise.reject(err); });
           	  	},
-          	  	function(finished) {          	  		
+          	  	function(finished) {
           	  		internalPromise.resolve();
           	  	}
           	  );
@@ -337,15 +337,15 @@ var BTChip = Class.create({
           }
           var processInputs = function() {
             async.eachSeries(
-              transaction['inputs'], 
+              transaction['inputs'],
               function (input, finishedCallback) {
-                data = input['prevout'].concat(currentObject.createVarint(input['script'].length));                
+                data = input['prevout'].concat(currentObject.createVarint(input['script'].length));
                 currentObject.getTrustedInputRaw_async(false, undefined, data).then(function (result) {
                   // iteration (eachSeries) ended
                   // TODO notify progress
                   // deferred.notify("input");
                   processScriptBlocks(input['script']).then(function(result) {
-                	currentObject.getTrustedInputRaw_async(false, undefined, input['sequence']).then(function (result) {  	
+                	currentObject.getTrustedInputRaw_async(false, undefined, input['sequence']).then(function (result) {
                 		finishedCallback();
                 	}).fail(function(err) { deferred.reject(err); });
                   }).fail(function(err) { deferred.reject(err); });
@@ -357,7 +357,7 @@ var BTChip = Class.create({
                 	processOutputs();
                 }).fail(function (err) { deferred.reject(err); });
               }
-            );          	
+            );
           }
           var processOutputs = function() {
                   async.eachSeries(
@@ -378,7 +378,7 @@ var BTChip = Class.create({
                         deferred.resolve(result);
                       }).fail(function (err) { deferred.reject(err); });
                     }
-                  );          	
+                  );
           }
           var data = transaction['version'].concat(currentObject.createVarint(transaction['inputs'].length));
           currentObject.getTrustedInputRaw_async(true, indexLookup, data).then(function (result) {
@@ -394,8 +394,9 @@ var BTChip = Class.create({
 
 	gaStartUntrustedHashTransactionInput_async: function(newTransaction, transaction) {
         var currentObject = this;
-        var version_hex = new ByteString(
-        	Bitcoin.convert.bytesToHex(Bitcoin.convert.numToBytes(parseInt(transaction.version), 4)), HEX);
+	    var verBuf = new Bitcoin.Buffer.Buffer(4);
+	    verBuf.writeUInt32LE(transaction.version);
+        var version_hex = new ByteString(verBuf.toString('hex'), HEX);
 		var data = version_hex.concat(currentObject.createVarint(transaction['ins'].length));
         var deferred = Q.defer();
 		currentObject.startUntrustedHashTransactionInputRaw_async(newTransaction, true, data).then(function (result) {
@@ -405,19 +406,23 @@ var BTChip = Class.create({
                     function (input, finishedCallback) {
                         data = new ByteString(Convert.toHexByte(0x00), HEX);
 
-                        var txhash = Bitcoin.convert.bytesToHex(Bitcoin.convert.hexToBytes(input.outpoint.hash).reverse());
-                        var outpoint = Bitcoin.convert.bytesToHex(Bitcoin.convert.numToBytes(parseInt(input.outpoint.index), 4));
+                        var txhash = input.hash.toString('hex');
+                        var idxBuf = new Bitcoin.Buffer.Buffer(4);
+                        idxBuf.writeUInt32LE(input.index);
+                        var idxHex = idxBuf.toString('hex');
+                  		data = data.concat(new ByteString(txhash, HEX)).concat(new ByteString(idxHex, HEX));
 
-                  		data = data.concat(new ByteString(txhash, HEX)).concat(new ByteString(outpoint, HEX));
-
-                        var scriptBytes = new ByteString(Bitcoin.convert.bytesToHex(input.script.buffer), HEX);
+                        var scriptBytes = new ByteString(input.script.toString('hex'), HEX);
                         data = data.concat(currentObject.createVarint(scriptBytes.length));
                         currentObject.startUntrustedHashTransactionInputRaw_async(newTransaction, false, data).then(function(result) {
-                          data = scriptBytes.concat(new ByteString(Bitcoin.convert.bytesToHex(input['sequence']), HEX));
+                          var seqBuf = new Bitcoin.Buffer.Buffer(4);
+                          seqBuf.writeUInt32LE(input.sequence);
+                          var seqHex = seqBuf.toString('hex');
+                          data = scriptBytes.concat(new ByteString(seqHex, HEX));
                           currentObject.startUntrustedHashTransactionInputRaw_async(newTransaction, false, data).then(function (result) {
                             // TODO notify progress
                             i++;
-                            finishedCallback();                            
+                            finishedCallback();
                           }).fail(function (err) { deferred.reject(err); });
                         }).fail(function (err) { deferred.reject(err); });
                     },
@@ -441,12 +446,11 @@ var BTChip = Class.create({
 		return currentObject.untrustedHashTransactionInputFinalizeFullRaw_async(false, data).then(function (result) {
 			var data = new ByteString('', HEX);
 			transaction.outs.forEach(function(txout) {
-			   	data = data.concat(new ByteString(Bitcoin.convert.bytesToHex(
-			   		Bitcoin.convert.numToBytes(txout.value,8)), HEX));
-		    	var scriptBytes = txout.script.buffer;
-		    	data = data.concat(currentObject.createVarint(scriptBytes.length))
-		    	data = data.concat(new ByteString(Bitcoin.convert.bytesToHex(
-		    		scriptBytes), HEX));
+				var valBuf = new Bitcoin.Buffer.Buffer(8);
+				Bitcoin.bitcoin.bufferutils.writeUInt64LE(valBuf, txout.value, 0);
+			   	data = data.concat(new ByteString(valBuf.toString('hex'), HEX));
+		    	data = data.concat(currentObject.createVarint(txout.script.length))
+		    	data = data.concat(new ByteString(txout.script.toString('hex'), HEX));
 		  	})
 
 		    var internalPromise = Q.defer();
@@ -493,7 +497,7 @@ var BTChip = Class.create({
                           currentObject.startUntrustedHashTransactionInputRaw_async(newTransaction, false, data).then(function (result) {
                             // TODO notify progress
                             i++;
-                            finishedCallback();                            
+                            finishedCallback();
                           }).fail(function (err) { deferred.reject(err); });
                         }).fail(function (err) { deferred.reject(err); });
                     },
@@ -516,7 +520,7 @@ var BTChip = Class.create({
 		data = data.concat(amount).concat(fees);
 		var path = this.parseBIP32Path(path);
 		if (this.deprecatedBIP32Derivation) {
-			var account, chainIndex, internalChain;			
+			var account, chainIndex, internalChain;
 			if (path.length != 3) {
 				throw "Invalid BIP 32 path for deprecated BIP32 derivation";
 			}
@@ -532,7 +536,7 @@ var BTChip = Class.create({
 				data = data.concat(path[i]);
 			}
 			p2 = 0x00;
-		}				
+		}
 		var p2;
 		if (this.deprecatedFirmwareVersion) {
 			p2 = 0x00;
@@ -544,7 +548,7 @@ var BTChip = Class.create({
                   result['authorizationRequired'] = (outData.byteAt(1 + scriptDataLength) == 0x01);
                   return result;
                 });
-	}, 
+	},
 
 	hashOutputBinary_async: function(path, outputAddress, amount, fees) {
 		return this.hashOutputInternal_async(0x01, path, outputAddress, amount, fees);
@@ -567,7 +571,7 @@ var BTChip = Class.create({
 		var data;
 		var path = this.parseBIP32Path(path);
 		if (this.deprecatedBIP32Derivation) {
-			var account, chainIndex, internalChain;			
+			var account, chainIndex, internalChain;
 			if (path.length != 3) {
 				throw "Invalid BIP 32 path for deprecated BIP32 derivation";
 			}
@@ -591,7 +595,7 @@ var BTChip = Class.create({
 	},
 
 	createInputScript: function(publicKey, signatureWithHashtype) {
-		var data = new ByteString(Convert.toHexByte(signatureWithHashtype.length), HEX).concat(signatureWithHashtype);	
+		var data = new ByteString(Convert.toHexByte(signatureWithHashtype.length), HEX).concat(signatureWithHashtype);
 		data = data.concat(new ByteString(Convert.toHexByte(publicKey.length), HEX)).concat(publicKey);
 		return data;
 	},
@@ -653,31 +657,31 @@ var BTChip = Class.create({
                       tmpInput['sequence'] = defaultSequence;
                       targetTransaction['inputs'].push(tmpInput);
                     }
-                    
+
                     // compute public keys
                     var deferredPublicKeys = Q.defer();
 
                     // process public keys
                     deferredPublicKeys.promise.then(function (publicKeys) {
-                      // Sign each input 
+                      // Sign each input
                       var i=0;
                       async.eachSeries(
                         inputs,
                         function (input, finishedCallback) {
-                          targetTransaction['inputs'][i]['script'] = regularOutputs[i]['script'];			
-                          var resultHash;			
+                          targetTransaction['inputs'][i]['script'] = regularOutputs[i]['script'];
+                          var resultHash;
                           currentObject.startUntrustedHashTransactionInput_async(firstRun, targetTransaction, trustedInputs).then(function(result) {;
                             currentObject.hashOutputBase58_async(changePath, outputAddress, amount, fees).then(function (resultHash) {
                               if (resultHash['scriptData'].length != 0) {
                                       scriptData = resultHash['scriptData'];
                               }
-                              if (resultHash['authorizationRequired']) { 
+                              if (resultHash['authorizationRequired']) {
                                       // we're in the resume phase, but still required for authorization, this is odd
                                       if (resuming) {
                                         deferred.reject("Authorization has been rejected");
                                         return;
                                       }
-                                
+
                                       var resumeData = {};
                                       resumeData['authorizationRequired'] = resultHash['authorizationRequired'];
                                       resumeData['scriptData'] = scriptData;
@@ -688,7 +692,7 @@ var BTChip = Class.create({
                               }
                               currentObject.signTransaction_async(associatedKeysets[i], authorization, lockTime, sigHashType).then(function(result) {
                                 signatures.push(result);
-                                targetTransaction['inputs'][i]['script'] = new ByteString("", HEX);			
+                                targetTransaction['inputs'][i]['script'] = new ByteString("", HEX);
                                 if (firstRun) {
                                         firstRun = false;
                                 }
@@ -726,7 +730,7 @@ var BTChip = Class.create({
                         }
                       );
                     });
-                    
+
                     // compute public keys, then continue signing
                     if (!resuming) {
                       var publicKeysArray = [];
@@ -735,7 +739,7 @@ var BTChip = Class.create({
                         inputs,
                         function(input, finishedCallback) {
                           currentObject.getWalletPublicKey_async(associatedKeysets[i]).then(function(result) {
-							if (currentObject.compressedPublicKeys) {                          	
+							if (currentObject.compressedPublicKeys) {
 	                            publicKeysArray[i] = currentObject.compressPublicKey(result['publicKey']);
 	                        }
 	                        else {
@@ -788,7 +792,7 @@ var BTChip = Class.create({
 			return [ ((data.byteAt(offset + 2) << 8) + data.byteAt(offset + 1)), 3 ];
 		}
 		if (data.byteAt(offset) == 0xfe) {
-			return [ ((data.byteAt(offset + 4) << 24) + (data.byteAt(offset + 3) << 16) + 
+			return [ ((data.byteAt(offset + 4) << 24) + (data.byteAt(offset + 3) << 16) +
 				  (data.byteAt(offset + 2) << 8) + data.byteAt(offset + 1)), 5 ];
 		}
 	},
@@ -832,7 +836,7 @@ var BTChip = Class.create({
 			input['sequence'] = transaction.bytes(offset, 4);
 			offset += 4;
 			inputs.push(input);
-		}		
+		}
 		varint = this.getVarint(transaction, offset);
 		var numberOutputs = varint[0];
 		offset += varint[1];
@@ -858,7 +862,7 @@ var BTChip = Class.create({
 		alert("version " + transaction['version'].toString(HEX));
 		for (var i=0; i<transaction['inputs'].length; i++) {
 			var input = transaction['inputs'][i];
-			alert("input " + i + " prevout " + input['prevout'].toString(HEX) + " script " + input['script'].toString(HEX) + " sequence " + input['sequence'].toString(HEX)); 
+			alert("input " + i + " prevout " + input['prevout'].toString(HEX) + " script " + input['script'].toString(HEX) + " sequence " + input['sequence'].toString(HEX));
 		}
 		for (var i=0; i<transaction['outputs'].length; i++) {
 			var output = transaction['outputs'][i];

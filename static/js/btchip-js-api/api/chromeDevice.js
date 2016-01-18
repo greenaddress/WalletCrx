@@ -47,10 +47,10 @@ function hexToArrayBuffer(h) {
   return result;
 }
 
-function winUSBDevice(hardwareId) {  
+function winUSBDevice(hardwareId) {
     this.hardwareId = hardwareId;
     this.closedDevice = false;
-    this.claimed = false;    
+    this.claimed = false;
     this.device = hardwareId.device;
     // Mark claimed
     for (var i=0; i<winUSBDevice.unclaimedDevices.length; i++) {
@@ -96,12 +96,12 @@ winUSBDevice.prototype.send = function(data, callback) {
           direction: "out",
           endpoint: this.outEndpoint,
           data: hexToArrayBuffer(data)
-        },        
-        function(result) {                  
+        },
+        function(result) {
           if (callback) {
-            var exception = (result.resultCode != 0 ? "error " + result.resultCode : undefined);            
+            var exception = (result.resultCode != 0 ? "error " + result.resultCode : undefined);
             callback({
-              resultCode: result.resultCode,            
+              resultCode: result.resultCode,
               exception: exception
             });
           }
@@ -133,7 +133,7 @@ winUSBDevice.prototype.recv = function(size, callback) {
 }
 
 winUSBDevice.prototype.close = function(callback) {
-    var currentDevice = this;  
+    var currentDevice = this;
     if (this.claimed) {
       chrome.usb.releaseInterface(this.device, this.interfaceId, function() {
         currentDevice.claimed = false;
@@ -141,7 +141,7 @@ winUSBDevice.prototype.close = function(callback) {
           currentDevice.closedDevice = true;
           chrome.runtime.sendMessage({usbClosed: currentDevice});
           if (callback) callback();
-        });        
+        });
       });
     }
     else
@@ -150,7 +150,7 @@ winUSBDevice.prototype.close = function(callback) {
           currentDevice.closedDevice = true;
           chrome.runtime.sendMessage({usbClosed: currentDevice});
           if (callback) callback();
-        });        
+        });
     }
     else {
       if (callback) callback();
@@ -182,12 +182,12 @@ winUSBDevice.enumerate = function(vid, pid, callback) {
     if (devices.length == 0) {
       // No devices, answer immediately
       if (callback) callback([]);
-    }          
+    }
 
     // Locate suitable interfaces
-                              
+
     for (var currentDevice=0; currentDevice<devices.length; currentDevice++) {
-      (function(currentDevice) { 
+      (function(currentDevice) {
         chrome.usb.listInterfaces(devices[currentDevice], function(interfaceList) {
           probedDevices++;
           // If the device has at least one WinUSB interface, it can be probed
@@ -217,7 +217,7 @@ winUSBDevice.enumerate = function(vid, pid, callback) {
         }); // chrome.usb.listInterfaces
       })(currentDevice); // per device closure
     }
-  }); // chrome.usb.findDevices    
+  }); // chrome.usb.findDevices
 }
 
 
@@ -248,9 +248,9 @@ hidDevice.prototype.send = function(data, callback) {
   debug("=> " + data);
   chrome.hid.send(this.handle.connectionId, 0, hexToArrayBuffer(data), function() {
     if (callback) {
-      var exception = (chrome.runtime.lastError ? "error " + chrome.runtime.lastError : undefined);            
+      var exception = (chrome.runtime.lastError ? "error " + chrome.runtime.lastError : undefined);
         callback({
-          resultCode: 0,            
+          resultCode: 0,
           exception: exception
         });
     }
@@ -276,7 +276,7 @@ hidDevice.prototype.recv = function(size, callback) {
 }
 
 hidDevice.prototype.close = function(callback) {
-    var currentDevice = this;  
+    var currentDevice = this;
     if (this.claimed) {
       chrome.hid.disconnect(this.handle.connectionId, function() {
         currentDevice.claimed = false;
@@ -317,10 +317,10 @@ hidDevice.enumerate = function(vid, pid, usagePage, ledger, callback) {
   if (typeof usagePage != 'undefined') {
     try {
       // Chrome 39+ only
-      chrome.hid.getDevices({filters: [{usagePage: usagePage}]}, enumerated);      
+      chrome.hid.getDevices({filters: [{usagePage: usagePage}]}, enumerated);
       done = true;
     }
-    catch(e) {      
+    catch(e) {
     }
   }
   if (!done) {
@@ -329,9 +329,9 @@ hidDevice.enumerate = function(vid, pid, usagePage, ledger, callback) {
       chrome.hid.getDevices({filters: [{vendorId: vid, productId:pid}]}, enumerated);
       done = true;
     }
-    catch(e) {      
+    catch(e) {
       debug(e);
-    }    
+    }
   }
   if (!done) {
     try {
@@ -364,12 +364,12 @@ chromeDevice.prototype.open_async = function() {
   var parameters = msg.parameters;
   var device;
   if (parameters.device.transport == 'winusb') {
-    device = new winUSBDevice(parameters.device);      
+    device = new winUSBDevice(parameters.device);
   }
   else
   if (parameters.device.transport == 'hid') {
     device = new hidDevice(parameters.device);
-  }  
+  }
   boundDevices.push(device);
   var id = boundDevices.length - 1;
   device.open(function(result) {
@@ -485,7 +485,7 @@ chromeDevice.enumerateDongles_async = function(pid) {
         	if (pidHid2 != pidHid) {
           		for (var i=0; i<devicesHID2.length; i++) {
             			devicesWinUSB.push(devicesHID2[i]);
-          		}        
+          		}
         	}
 		if (pidHid3 != pidHid) {
 			for (var i=0; i<devicesHID3.length; i++) {
@@ -498,7 +498,7 @@ chromeDevice.enumerateDongles_async = function(pid) {
       	});
       });
    });
-  });  
+  });
 
   return deferred.promise;
 }
