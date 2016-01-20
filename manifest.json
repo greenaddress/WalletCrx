@@ -10,13 +10,13 @@
         "pages": ["bip38_sandbox.html"]
     },
     "externally_connectable" : {
-        "matches": [ "https://test.greenaddress.it/*" ]
+        "matches": [ "https://greenaddress.it/*" ]
     },
     "url_handlers": {
         "launch_chrome_app": {
             "matches": [
-                "https://test.greenaddress.it/*/launch_chrome_app/",
-                "https://test.greenaddress.it/launch_chrome_app/"
+                "https://greenaddress.it/*/launch_chrome_app/",
+                "https://greenaddress.it/launch_chrome_app/"
             ],
             "title": "Launch GreenAddress Chrome app"
         }
