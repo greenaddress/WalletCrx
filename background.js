@@ -51,3 +51,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     }
     return true;
 });
+
+chrome.runtime.onMessageExternal.addListener(function (msg, sender, sendResponse) {
+    sendResponse('GreenAddress installed');
+});

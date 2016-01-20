@@ -9,6 +9,18 @@
     "sandbox": {
         "pages": ["bip38_sandbox.html"]
     },
+    "externally_connectable" : {
+        "matches": [ "http://localhost:9908/*" ]
+    },
+    "url_handlers": {
+        "launch_chrome_app": {
+            "matches": [
+                "http://localhost:9908/*/launch_chrome_app/",
+                "http://localhost:9908/launch_chrome_app/"
+            ],
+            "title": "Launch GreenAddress Chrome app"
+        }
+    },
     "permissions": [
         "storage",
         "videoCapture",
