@@ -19,6 +19,20 @@
                 "http://localhost:9908/launch_chrome_app/"
             ],
             "title": "Launch GreenAddress Chrome app"
+        },
+        "launch_chrome_app_signup": {
+            "matches": [
+                "http://localhost:9908/*/launch_chrome_app_signup/",
+                "http://localhost:9908/launch_chrome_app_signup/"
+            ],
+            "title": "Launch GreenAddress Chrome app"
+        },
+        "launch_chrome_app_signup": {
+            "matches": [
+                "http://localhost:9908/*/launch_chrome_app_signup/",
+                "http://localhost:9908/launch_chrome_app_signup/"
+            ],
+            "title": "Launch GreenAddress Chrome app"
         }
     },
     "permissions": [

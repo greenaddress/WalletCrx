@@ -1,14 +1,18 @@
 var lang, usbDevices = {};
 
-var start = function() {
-    chrome.app.window.create(lang+'/wallet.html', {
+var start = function(goToSignup) {
+    var suffix = '';
+    if (goToSignup) {
+        suffix = '#create'
+    }
+    chrome.app.window.create(lang+'/wallet.html'+suffix, {
         'bounds': {
             'width': 992,
             'height': 700,
         },
         'id': 'wallet'
     }, function() {
-        chrome.app.window.get('wallet').onClosed.removeListener(start); 
+        chrome.app.window.get('wallet').onClosed.removeListener(start);
         chrome.app.window.get('wallet').onClosed.addListener(function () {
             for (var i in usbDevices) {
                 winUSBInterface.prototype.close.apply(usbDevices[i]);
@@ -17,7 +21,7 @@ var start = function() {
     });
 }
 var SUPPORTED_LANGS = ['de', 'en', 'es', 'fr', 'it', 'pl', 'ru', 'uk', 'sv', 'nl', 'el', 'th'];
-chrome.app.runtime.onLaunched.addListener(function() {
+chrome.app.runtime.onLaunched.addListener(function(data) {
     chrome.storage.local.get('language', function(items) {
         lang = items.language;
         if (!lang) {
@@ -29,11 +33,10 @@ chrome.app.runtime.onLaunched.addListener(function() {
                         break;
                     }
                 }
-                console.log(lang);
-                start();
+                start(data.id == "launch_chrome_app_signup");
             });
         } else {
-            start();
+            start(data.id == "launch_chrome_app_signup");
         }
     });
 });

@@ -19,6 +19,13 @@
                 "https://test.greenaddress.it/launch_chrome_app/"
             ],
             "title": "Launch GreenAddress Chrome app"
+        },
+        "launch_chrome_app_signup": {
+            "matches": [
+                "https://test.greenaddress.it/*/launch_chrome_app_signup/",
+                "https://test.greenaddress.it/launch_chrome_app_signup/"
+            ],
+            "title": "Launch GreenAddress Chrome app"
         }
     },
     "permissions": [
