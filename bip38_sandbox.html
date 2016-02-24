@@ -6,21 +6,29 @@
 <script>
   window.addEventListener('message', function(event) {
     var input = event.data;
+    var bitcoinBip38 = new Bitcoin.bip38();
     if (input.eckey) {
-    	event.source.postMessage(new Bitcoin.ECKey(input.eckey).getEncryptedFormat(input.password), event.origin);
+        var ecpair = Bitcoin.bitcoin.ECPair.fromWIF(input.eckey, input.network);
+        // for compatibility with iOS, use mainnet bitcoin addr instead of testnet for salt:
+        ecpair.network = Bitcoin.bitcoin.networks.bitcoin;
+        event.source.postMessage(bitcoinBip38.encrypt(
+            input.eckey,
+            input.password,
+            ecpair.getAddress()
+        ), event.origin);
     } else if (input.mnemonic_decrypted) {
         event.source.postMessage(bip38.encrypt({data: input.mnemonic_decrypted, key: input.password}, input.salt_a), event.origin);
     } else if (input.mnemonic_encrypted) {
         event.source.postMessage(bip38.decrypt({data: input.mnemonic_encrypted, key: input.password}), event.origin);
     } else {
-    	try {
-        	event.source.postMessage(Bitcoin.ECKey.decodeEncryptedFormat(input.b58, input.password).toBytes(), event.origin);
+        try {
+            event.source.postMessage(bitcoinBip38.decrypt(input.b58, input.password), event.origin);
         } catch (e) {
-        	if (e.message.indexOf("Hash could not be verified.") != -1) {
-        		event.source.postMessage({error: 'invalid_passphrase'}, event.origin);
-        	} else {
-        		event.source.postMessage({error: 'invalid_privkey'}, event.origin);
-        	}
+            if (e.message.indexOf("Hash could not be verified.") != -1) {
+                event.source.postMessage({error: 'invalid_passphrase'}, event.origin);
+            } else {
+                event.source.postMessage({error: 'invalid_privkey'}, event.origin);
+            }
         }
     };
   });
