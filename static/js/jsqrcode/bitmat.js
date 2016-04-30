@@ -22,7 +22,6 @@
 * limitations under the License.
 */
 
-
 function BitMatrix( width,  height)
 {
 	if(!height)

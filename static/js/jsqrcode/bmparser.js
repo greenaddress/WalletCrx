@@ -22,7 +22,6 @@
 * limitations under the License.
 */
 
-
 function BitMatrixParser(bitMatrix)
 {
 	var dimension = bitMatrix.Dimension;

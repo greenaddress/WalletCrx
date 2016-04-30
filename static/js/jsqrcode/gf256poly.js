@@ -22,7 +22,6 @@
 * limitations under the License.
 */
 
-
 function GF256Poly(field,  coefficients)
 {
 	if (coefficients == null || coefficients.length == 0)

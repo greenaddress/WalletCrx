@@ -14,7 +14,6 @@
    limitations under the License.
 */
 
-
 qrcode = {};
 qrcode.imagedata = null;
 qrcode.width = 0;

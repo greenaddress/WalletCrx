@@ -22,7 +22,6 @@
 * limitations under the License.
 */
 
-
 GridSampler = {};
 
 GridSampler.checkAndNudgePoints=function( image,  points)

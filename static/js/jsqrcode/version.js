@@ -22,8 +22,6 @@
 * limitations under the License.
 */
 
-
-
 function ECB(count,  dataCodewords)
 {
 	this.count = count;

@@ -22,7 +22,6 @@
 * limitations under the License.
 */
 
-
 function DataBlock(numDataCodewords,  codewords)
 {
 	this.numDataCodewords = numDataCodewords;
