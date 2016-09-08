@@ -13,7 +13,7 @@ else
         git archive -o ../WalletCrxTestNet_$epochTime.zip $stashName
 fi
 
-./prepare.sh mainnet
+./prepare.sh -s mainnet
 stashName=`git stash create`;
 if [ -z "$stashName" ]
 then
