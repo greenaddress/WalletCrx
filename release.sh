@@ -36,7 +36,7 @@ $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_regtest.json
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_testnet.json
 # _mainnet is optional:
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_mainnet.json 2>/dev/null || true
-git commit -am"bump version for release $1"
+git commit -S -am"bump version for release $1"
 
 $SED -i 's|WEBFILES_BRANCH=${WEBFILES_BRANCH##refs/heads/}|WEBFILES_BRANCH="'crx-v$1'"|' prepare.sh
 
