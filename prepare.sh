@@ -97,9 +97,11 @@ rm -rf node_modules
 # 2. Render *.html:
 ../venv/bin/python render_templates.py ..
 
+
+TMPDIR=`mktemp -d`
 # 3. Copy *.js:
-cp ../static/wallet/config{,_regtest,_testnet}.js /tmp
-cp ../static/wallet/network{,_regtest,_testnet}.js /tmp
+cp ../static/wallet/config*.js $TMPDIR
+cp ../static/wallet/network*.js $TMPDIR
 rm -rf ../static
 cp -r build/static ../static
 rm -rf ../static/fonts/*.svg  # .woff are enough for crx
@@ -108,8 +110,9 @@ rm ../static/js/cdv-plugin-fb-connect.js  # cordova only
 rm ../static/js/facebook-js-sdk.js  # cordova only
 rm ../static/js/{greenaddress,instant}.js  # web only
 mkdir -p ../static/wallet >/dev/null
-mv /tmp/config{,_regtest,_testnet}.js ../static/wallet/
-mv /tmp/network{,_regtest,_testnet}.js ../static/wallet/
+mv $TMPDIR/config*.js ../static/wallet/
+mv $TMPDIR/network*.js ../static/wallet/
+rm -rf $TMPDIR
 
 cd ..
 
