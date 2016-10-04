@@ -50,6 +50,10 @@
             {"vendorId": 21324,
              "productId": 1},
             {"vendorId": 11044,
+             "productId": 1},
+            {"vendorId": 11415,
+             "productId": 0},
+            {"vendorId": 11415,
              "productId": 1}
         ]}
     ],
