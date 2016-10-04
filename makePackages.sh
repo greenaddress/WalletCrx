@@ -23,7 +23,7 @@ else
         add_static ../WalletCrxTestNet_$epochTime.zip
 fi
 
-./prepare.sh mainnet
+./prepare.sh -s mainnet
 stashName=`git stash create`;
 if [ -z "$stashName" ]
 then
