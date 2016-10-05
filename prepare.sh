@@ -84,7 +84,7 @@ fi
 
 if [ \! -e venv ]; then
     virtualenv venv
-    venv/bin/pip install jinja2
+    venv/bin/pip install -r webfiles/requirements.txt
 fi
 
 cd webfiles
