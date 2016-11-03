@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 function add_static {
         LANGS="de en es fr it pl ru uk sv nl el th"
         for LANG in $LANGS; do
