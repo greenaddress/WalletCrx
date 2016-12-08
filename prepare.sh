@@ -35,7 +35,8 @@ else
 fi
 done
 
-if [ "$HELP" == "1" ] || [ $# -eq 0 ] || ( [ ! $1 = 'mainnet' ] && [ ! $1 = 'testnet' ] && [ ! $1 = 'regtest' ] );
+if [ "$HELP" == "1" ] || [ $# -eq 0 ] || \
+    ( [ ! $1 = 'mainnet' ] && [ ! $1 = 'testnet' ] && [ ! $1 = 'regtest' ] && [ ! $1 = 'liveregtest' ] );
 then
     if [ "$HELP" != "1" ]; then
         echo "Invalid or no arguments provided."

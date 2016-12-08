@@ -33,6 +33,7 @@ fi
 
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest.json
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_regtest.json
+$SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_liveregtest.json
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_testnet.json
 # _mainnet is optional:
 $SED -i 's/"version": "[0-9.]\+"/"version": "'$1'"/' manifest_mainnet.json 2>/dev/null || true
