@@ -3,8 +3,19 @@
 set -e
 
 WEBFILES_REPO="https://github.com/greenaddress/GreenAddressWebFiles.git"
-WEBFILES_BRANCH=$(git symbolic-ref HEAD)
-WEBFILES_BRANCH=${WEBFILES_BRANCH##refs/heads/}
+WEBFILES_BRANCH=$(git describe --exact-match --all)
+
+case "$WEBFILES_BRANCH" in
+heads/*)
+    WEBFILES_BRANCH=${WEBFILES_BRANCH#heads/}
+    ;;
+tags/*)
+    WEBFILES_BRANCH=crx-${WEBFILES_BRANCH#tags/}
+    ;;
+*)
+    WEBFILES_BRANCH=crx-$WEBFILES_BRANCH
+    ;;
+esac
 
 while [ $# -gt 0 ]; do
 key="$1"
