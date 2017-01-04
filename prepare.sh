@@ -3,7 +3,7 @@
 set -e
 
 WEBFILES_REPO="https://github.com/greenaddress/GreenAddressWebFiles.git"
-WEBFILES_BRANCH=crx-release-94
+WEBFILES_BRANCH="crx-v0.0.94"
 
 while [ $# -gt 0 ]; do
 key="$1"
