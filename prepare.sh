@@ -84,7 +84,9 @@ if [ \! -e webfiles ]; then
 fi
 
 if [ \! -e venv ]; then
-    virtualenv venv
+    command -v python2 >/dev/null &&
+        python2 -m virtualenv venv ||
+        python -m virtualenv venv
 fi
 venv/bin/pip install -r webfiles/requirements.txt
 
