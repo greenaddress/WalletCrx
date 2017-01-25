@@ -121,7 +121,6 @@ cp -r build/static ../static
 rm -rf ../static/fonts/*.svg  # .woff are enough for crx
 rm -rf ../static/sound/*.wav  # .mp3 are enough for crx
 rm ../static/js/cdv-plugin-fb-connect.js  # cordova only
-rm ../static/js/facebook-js-sdk.js  # cordova only
 rm ../static/js/{greenaddress,instant}.js  # web only
 mkdir -p ../static/wallet >/dev/null
 mv $TMPDIR/config*.js ../static/wallet/
