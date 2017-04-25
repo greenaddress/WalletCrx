@@ -4,6 +4,8 @@ For TESTNET run ./prepare.sh testnet
 
 For MAINNET run ./prepare.sh mainnet
 
+For LIVEREGTEST run ./prepare.sh liveregtest
+
 For REGTEST run ./prepare.sh regtest
 
 To create a Chrome store zip for mainnet and testnet run ./makePackages.sh

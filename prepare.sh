@@ -56,12 +56,12 @@ then
 Usage: ./prepare.sh [-h] [--webfiles-repo WEBFILES_REPO]
                          [--webfiles-branch WEBFILES_BRANCH]
                          [--silent]
-                         (mainnet | testnet | regtest)
+                         (mainnet | testnet | liveregtest | regtest)
 
 Prepares the Chrome extension. Requires npm and Python 2.x with virtualenv.
 
 positional arguments:
-  (mainnet | testnet | regtest)    The Bitcoin network to use
+  (mainnet | testnet | liveregtest | regtest)    The Bitcoin network to use
 
 optional arguments:
   -h, --help                       show this help message and exit
