@@ -17,6 +17,8 @@ tags/*)
     ;;
 esac
 
+UNKNOWN_OPTION=""
+
 while [ $# -gt 0 ]; do
 key="$1"
 
@@ -36,7 +38,10 @@ case $key in
     shift # past argument
     ;;
     *)
-        # unknown option
+    if [ $# -gt 1 ]; then
+        UNKNOWN_OPTION="$1"
+        break
+    fi
     ;;
 esac
 if [ $# -gt 1 ]; then
@@ -46,10 +51,12 @@ else
 fi
 done
 
-if [ "$HELP" == "1" ] || [ $# -eq 0 ] || \
+if [ "$UNKNOWN_OPTION" != "" ] || [ "$HELP" == "1" ] || [ $# -eq 0 ] || \
     ( [ ! $1 = 'mainnet' ] && [ ! $1 = 'testnet' ] && [ ! $1 = 'regtest' ] && [ ! $1 = 'liveregtest' ] );
 then
-    if [ "$HELP" != "1" ]; then
+    if [ "$UNKNOWN_OPTION" != "" ]; then
+        echo "Unknown option: " $UNKNOWN_OPTION
+    elif [ "$HELP" != 1 ]; then
         echo "Invalid or no arguments provided."
     fi
     cat <<EOF
