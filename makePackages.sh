@@ -12,28 +12,27 @@ function add_static {
 
 epochTime=`date +%s`
 
-./prepare.sh -s testnet
-stashName=`git stash create`;
-if [ -z "$stashName" ]
-then
-        echo "Packaging HEAD"
-        git archive -o ../WalletCrxTestNet_$epochTime.zip HEAD
-        add_static ../WalletCrxTestNet_$epochTime.zip
+if [ -f /.dockerenv ]; then
+    stashName=`git -c user.name='Builder' -c user.email='builder@email.org' stash create`
 else
-        echo "Packaging HEAD + localchanges"
-        git archive -o ../WalletCrxTestNet_$epochTime.zip $stashName
-        add_static ../WalletCrxTestNet_$epochTime.zip
+    stashName=`git stash create`
 fi
 
-./prepare.sh -s mainnet
-stashName=`git stash create`;
-if [ -z "$stashName" ]
-then
-        echo "Packaging HEAD"
-        git archive -o ../WalletCrxMainNet_$epochTime.zip HEAD
-        add_static ../WalletCrxMainNet_$epochTime.zip
-else
-        echo "Packaging HEAD + localchanges"
-        git archive -o ../WalletCrxMainNet_$epochTime.zip $stashName
-        add_static ../WalletCrxMainNet_$epochTime.zip
-fi
+function build_env() {
+    ./prepare.sh -s -b master $1
+
+    if [ -z "$stashName" ]
+    then
+        echo "Packaging HEAD $1"
+        git archive -o WalletCrx$1_$epochTime.zip HEAD
+        add_static WalletCrx$1_$epochTime.zip
+    else
+        echo "Packaging HEAD + localchanges $1"
+        git archive -o WalletCrx$1_$epochTime.zip $stashName
+        add_static WalletCrx$1_$epochTime.zip
+    fi
+}
+
+build_env mainnet
+build_env testnet
+build_env liveregtest

@@ -1,3 +1,5 @@
+Build status: [![Build Status](https://travis-ci.org/greenaddress/WalletCrx.png?branch=master)](https://travis-ci.org/greenaddress/WalletCrx)
+
 ## How to build
 
 For TESTNET run ./prepare.sh testnet
@@ -8,7 +10,9 @@ For LIVEREGTEST run ./prepare.sh liveregtest
 
 For REGTEST run ./prepare.sh regtest
 
-To create a Chrome store zip for mainnet and testnet run ./makePackages.sh
+To create a Chrome store zip for mainnet, testnet and liveregtest run ./makePackages.sh
+
+Prepares the Chrome extension. Requires npm and Python 2.x with virtualenv, for an example with Debian Jessie see contrib/jessie_deps.sh
 
 Once built, you can just load the directory in Chrome extentions by enabling the developer mode.
 

@@ -1,0 +1,22 @@
+test_debug_build:
+  image: greenaddress/walletcrx:latest
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./makePackages.sh
+
+build_tag_release:
+  image: greenaddress/walletcrx:latest
+  artifacts:
+    name: "walletcrx-release-$CI_COMMIT_REF_NAME"
+    when: on_success
+    paths:
+    - ./*.zip
+  tags:
+    - ga
+  script:
+    - cd $CI_PROJECT_DIR
+    - ./makePackages.sh
+  only:
+    - tags
