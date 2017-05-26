@@ -7,4 +7,4 @@ services:
 before_install:
   - docker pull greenaddress/walletcrx
 
-script: docker run -v $PWD:/walletcrx greenaddress/walletcrx /bin/sh -c "cd /walletcrx && ./makePackages.sh"
+script: docker run -v $PWD:/walletcrx greenaddress/walletcrx /bin/sh -c "cd /walletcrx && ./makePackages.sh -b master"
