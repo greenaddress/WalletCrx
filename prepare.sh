@@ -14,6 +14,11 @@ tags/*)
     ;;
 *)
     WEBFILES_BRANCH=crx-$WEBFILES_BRANCH
+    if test "${WEBFILES_BRANCH#*testtagrelease}" != "$WEBFILES_BRANCH"
+    then
+        # test tag, build webfiles against master
+        WEBFILES_BRANCH=master
+    fi
     ;;
 esac
 
