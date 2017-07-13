@@ -7,7 +7,7 @@ test_debug_build:
     - ga
   script:
     - cd $CI_PROJECT_DIR
-    - ./makePackages.sh -b master
+    - ./makePackages.sh
 
 build_tag_release:
   image: greenaddress/walletcrx:latest
