@@ -12,7 +12,7 @@ For REGTEST run ./prepare.sh regtest
 
 To create a Chrome store zip for mainnet, testnet and liveregtest run ./makePackages.sh
 
-Prepares the Chrome extension. Requires npm and Python 2.x with virtualenv, for an example with Debian Jessie see contrib/jessie_deps.sh
+Prepares the Chrome extension. Requires npm and Python 2.x with virtualenv, for an example with Debian Stretch see contrib/stretch_deps.sh
 
 Once built, you can just load the directory in Chrome extentions by enabling the developer mode.
 
