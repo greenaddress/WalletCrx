@@ -24,6 +24,7 @@ if [ \! -e node_modules ]; then
 fi
 
 npm run build
+npm run test
 
 # 2. Render *.html:
 ../venv/bin/python render_templates.py ..
