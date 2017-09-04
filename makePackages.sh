@@ -36,12 +36,7 @@ BASE_ZIP=WalletCrx_$epochTime.zip
 
 # prepare base release valid for all envs
 ./prepare.sh "$@"
-git archive -9 -o ${BASE_ZIP} HEAD
-LANGS="de en es fr it pl ru uk sv nl el th"
-for LANG in $LANGS; do
-    zip -q -9 -r ${BASE_ZIP} $LANG
-done
-zip -q -9 -r ${BASE_ZIP} static/{css,fonts,img,js,sound}
+zip -q -9 -r ${BASE_ZIP} background.js bip38_sandbox.html icon128.png icon48.png icon16.png de en es fr it pl ru uk sv nl el th static/{css,fonts,img,js,sound}
 mkdir -p static/wallet
 
 # create separate zips for each env

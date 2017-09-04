@@ -4,7 +4,4 @@ sudo: required
 services:
   - docker
 
-before_install:
-  - docker pull greenaddress/walletcrx
-
-script: docker run -v $PWD:/walletcrx greenaddress/walletcrx /bin/sh -c "cd /walletcrx && ./makePackages.sh"
+script: docker run -v $PWD:/walletcrx greenaddress/walletcrx@sha256:21451ff70e639a2a5c8fb8434b9593626c323a8ffd9372db5ee8bafc512de74f /bin/sh -c "cd /walletcrx && ./makePackages.sh"
