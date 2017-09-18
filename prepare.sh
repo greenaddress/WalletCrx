@@ -2,6 +2,12 @@
 
 set -e
 
+if [ "$(uname)" == "Darwin" ]; then
+    SHASUM="shasum -a 256"
+else
+    SHASUM="sha256sum"
+fi
+
 if [ "x$1" == "xdev" ]; then
     WEBFILES_REPO="https://github.com/greenaddress/GreenAddressWebFiles.git"
     WEBFILES_BRANCH=js_only_deprecated
@@ -12,17 +18,17 @@ else
     SHA256SUM_WEB_FILES=3cd120629a144b0c102ecaa55ffd1e85f635e948abf65f619a328b1bc896b9d8
     WEB_FILES_TAG=jsonly-v0.0.98
     curl -sL -o webfiles.tar.gz https://github.com/greenaddress/GreenAddressWebFiles/archive/${WEB_FILES_TAG}.tar.gz
-    echo "${SHA256SUM_WEB_FILES}  webfiles.tar.gz" | sha256sum --check
+    echo "${SHA256SUM_WEB_FILES}  webfiles.tar.gz" | $SHASUM --check
     tar -zxf webfiles.tar.gz
     mv GreenAddressWebFiles-${WEB_FILES_TAG} webfiles
     rm webfiles.tar.gz
+fi
 
-    if [ \! -e venv ]; then
-        command -v python2 >/dev/null &&
-            python2 -m virtualenv venv ||
-            python -m virtualenv venv
-        venv/bin/pip install -r webfiles/requirements.txt
-    fi
+if [ \! -e venv ]; then
+    command -v python2 >/dev/null &&
+        python2 -m virtualenv venv ||
+        python -m virtualenv venv
+    venv/bin/pip install -r webfiles/requirements.txt
 fi
 
 cd webfiles
