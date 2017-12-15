@@ -15,8 +15,8 @@ if [ "x$1" == "xdev" ]; then
         git clone --depth 1 $WEBFILES_REPO -b $WEBFILES_BRANCH webfiles
     fi
 else
-    SHA256SUM_WEB_FILES=718f4128bfaae335fa797e1349a7a9f01b383547efc6ac4ccea83105f6b658eb
-    WEB_FILES_TAG=jsonly-v0.1.05
+    SHA256SUM_WEB_FILES=69ff1dc4cb858f02a3a09ca6a01fd82300053308168ac3ed4f0bbea9c50f6e75
+    WEB_FILES_TAG=jsonly-v0.1.07
     curl -sL -o webfiles.tar.gz https://github.com/greenaddress/GreenAddressWebFiles/archive/${WEB_FILES_TAG}.tar.gz
     echo "${SHA256SUM_WEB_FILES}  webfiles.tar.gz" | $SHASUM --check
     tar -zxf webfiles.tar.gz
