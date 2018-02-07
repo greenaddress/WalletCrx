@@ -1,17 +1,10 @@
 variables:
   GIT_DEPTH: "4"
 
-test_debug_build:
-  image: greenaddress/walletcrx@sha256:21451ff70e639a2a5c8fb8434b9593626c323a8ffd9372db5ee8bafc512de74f
-  tags:
-    - ga
-  script:
-    - cd $CI_PROJECT_DIR
-    - ./makePackages.sh
-
 build_tag_release:
   image: greenaddress/walletcrx@sha256:21451ff70e639a2a5c8fb8434b9593626c323a8ffd9372db5ee8bafc512de74f
   artifacts:
+    expire_in: 14 days
     name: "walletcrx-release-$CI_COMMIT_REF_NAME"
     when: on_success
     paths:
@@ -21,5 +14,3 @@ build_tag_release:
   script:
     - cd $CI_PROJECT_DIR
     - ./makePackages.sh
-  only:
-    - tags
